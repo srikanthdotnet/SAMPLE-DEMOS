@@ -1,0 +1,1875 @@
+﻿@model KlocModel.NexPurchase
+
+
+@{
+    ViewBag.Title = "BankingDashboard";
+    Layout = "~/Views/Shared/_KlocDashboard.cshtml";
+}
+<script src="~/Scripts/googlechartgrouping.js"></script>
+<script src="~/Scripts/loader.js"></script>
+<link type="text/css" rel="stylesheet" href="@Url.Content("~/Content/Kloc/loaderstyles.css")"/>
+<style type="text/css">
+    .loader {
+        overflow: visible;
+        margin: auto;
+        content: '';
+        display: block;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: url(../Images/ajax-loader1.gif) 50% 50% no-repeat rgba(0,0,0,0.3);
+        z-index: 9;
+    }
+
+    .fund-dd .input_field {
+        margin-top: 5px;
+    }
+</style>
+
+<script type="text/javascript">
+    $(document).ready(function () {
+        $('#maindiv').hide();
+        $('#allcleareddiv').show();
+        $("#txtfromdate").datepicker({
+            dateFormat: 'dd/mm/yy',
+        });
+        $("#txttodate").datepicker({
+            dateFormat: 'dd/mm/yy',
+        });
+        $('#currentFundName').html('');
+        var linechart = [['TRANSACTIONTYPE', 'COUNT', 'AMOUNT']]
+        var SIParray = [['TRANSACTIONMODES', 'AMOUNT']]
+        var NONSIParray = [['TRANSACTIONMODES', 'AMOUNT']]
+        var physicalunit = [['unitstatus', 'unitcountdata']]
+        //-----------------
+        ////////// google.charts.load('current', { 'packages': ['bar'] });
+
+        //-----------------------
+        google.charts.load("current", { packages: ["corechart"] });
+        google.charts.setOnLoadCallback(drawChart);
+        function drawChart() {
+
+        }
+        google.charts.load("current", { packages: ["corechart"] });
+        google.charts.setOnLoadCallback(drawChart1);
+        function drawChart1() {
+
+        }
+        clearalldata();
+        //--every 30 minutes auto refresh the data---
+        setInterval(function () {
+            clearalldata();
+            getdoctype();
+        }, 1800000);
+        //30 minutes duration 1800000
+        //---------------------------
+
+
+        $('#btnsip').click(function () {
+
+            clearalldata();
+            Postdoctype();
+        });
+        $('#btnToday').click(function () {
+            $('#txtfromdate').val(getddmmyyy());
+
+            clearalldata();
+            getdoctype();
+        });
+
+    });
+    function getddmmyyy() {
+
+        var dt = new Date();
+        var fdt = dt.getDate() + '/' + dt.getMonth() + '/' + dt.getFullYear();
+
+
+        var today = new Date();
+        var dd = today.getDate();
+        var mm = today.getMonth() + 1; //January is 0!
+        var minutesdata = today.getHours();
+        var secondsdata = today.getSeconds();
+        var yyyy = today.getFullYear();
+        if (dd < 10) {
+            dd = '0' + dd;
+        }
+        if (mm < 10) {
+            mm = '0' + mm;
+        }
+        return dd + '/' + mm + '/' + yyyy;
+    }
+    function getdoctype() {
+        $('#maindiv').hide();
+        $('#allcleareddiv').show();
+        $('#loader').show().addClass("loader");
+        var Todate;
+        Todate = getddmmyyy();
+
+        var linechart = [['TRANSACTIONTYPE', 'COUNT', 'AMOUNT']]
+        var SIParray = [['TRANSACTIONMODES', 'AMOUNT']]
+        var NONSIParray = [['TRANSACTIONMODES', 'AMOUNT']]
+        var physicalunit = [['unitstatus', 'unitcountdata']]
+
+        google.charts.load("current", { packages: ["corechart"] });
+        google.charts.setOnLoadCallback(drawChart);
+        function drawChart() {
+
+        }
+        google.charts.load("current", { packages: ["corechart"] });
+        google.charts.setOnLoadCallback(drawChart1);
+        function drawChart1() {
+
+        }
+        $("#txtfromdate").val(Todate);
+        $('#datechange').append(Todate);
+        $('#datechange1').append(Todate);
+        $('#datechange2').append(Todate);
+        $('#datechange3').append(Todate);
+        $('#datechange4').append(Todate);
+        //------fund checking--
+        var currentfund = $('#ddlFund').val();
+        if (currentfund == "") {
+            $('#maindiv').hide();
+            alert('Please select fund to view the report');
+
+            $('#loader').hide();
+
+            return;
+        }
+        //---end of fund checking--
+        var Flg = 1;
+        $.ajax({
+            url: "/Kloc/GetallBankingDashboarddata",
+            type: "POST",
+            cache: false,
+            datatype: JSON,
+            data: { Fromdate: Todate, Fund: currentfund, flg: Flg },
+            success: function (data) {
+                debugger;
+                var Table0 = $.parseJSON(data).Table;
+                var Table1 = $.parseJSON(data).Table1;
+                var Table2 = $.parseJSON(data).Table2;
+                var Table3 = $.parseJSON(data).Table3;
+                var Table4 = $.parseJSON(data).Table4;
+                var Table5 = $.parseJSON(data).Table5;
+                var Table6 = $.parseJSON(data).Table6;
+                var Table7 = $.parseJSON(data).Table7;
+                var Table8 = $.parseJSON(data).Table8;
+                var Table9 = $.parseJSON(data).Table9;
+                var Table10 = $.parseJSON(data).Table10;
+                var Table11 = $.parseJSON(data).Table11;
+                var Table12 = $.parseJSON(data).Table12;
+                //-----------SIP DATA ----------
+                $('#currentFundName').html($('#ddlFund option:selected').text());
+                //$('#divupto1weekcount').html(Table0[0].SIPDAYSDURATIONCOUNT);
+                //$('#divupto1weekamount').append('&#8377;' + parseFloat(Table0[0].SIPDAYSGROSSAMOUNTTOTAL).toFixed(2));
+                $('#upto1weeksipdiv').addClass('twoto3weekallcleared');
+                $('#upto1weeksipdivmsg').html('');
+                var upto1weeksipdata = Table0[0].SIPDAYSDURATIONCOUNT;
+                var upto1weeksipamount = Table0[0].SIPDAYSGROSSAMOUNTTOTAL;
+                if (upto1weeksipdata > 0 && upto1weeksipamount > 0) {
+                    $('#divupto1weekcount').html(Table0[0].SIPDAYSDURATIONCOUNT);
+                    var sipamountdecimalconversion = parseFloat(Table0[0].SIPDAYSGROSSAMOUNTTOTAL).toFixed(2);
+                    var commaseparatesipamountconversion = commaSeparateNumber(sipamountdecimalconversion);
+                    $('#divupto1weekamount').append('&#8377;' + commaseparatesipamountconversion);
+                }
+                else {
+                    $('#upto1weeksipdivmsg').html('All Cleared').addClass('allclear');
+                }
+                //------------
+                //$('#div1to2weekcount').html(Table0[1].SIPDAYSDURATIONCOUNT);
+                //$('#div1to2weekamount').append('&#8377;' + parseFloat(Table0[1].SIPDAYSGROSSAMOUNTTOTAL).toFixed(2));
+                $('#1to2weekssipdiv').addClass('twoto3weekallcleared');
+                $('#1to2weekssipdivmsg').html('');
+                var oneto2weekssipdata = Table0[1].SIPDAYSDURATIONCOUNT;
+                var oneto2weekssipamount = Table0[1].SIPDAYSGROSSAMOUNTTOTAL;
+                if (oneto2weekssipdata > 0 && oneto2weekssipamount > 0) {
+                    $('#div1to2weekcount').html(Table0[1].SIPDAYSDURATIONCOUNT);
+                    var sip1to2weekamountamountdecimalconversion = parseFloat(Table0[1].SIPDAYSGROSSAMOUNTTOTAL).toFixed(2);
+                    var commaseparatesip1to2weekamountconversion = commaSeparateNumber(sip1to2weekamountamountdecimalconversion);
+                    $('#div1to2weekamount').append('&#8377;' + commaseparatesip1to2weekamountconversion);
+                }
+                else {
+                    $('#1to2weekssipdivmsg').html('All Cleared').addClass('allclear');
+                }
+                $('#2to3weeks').removeClass('twoto3weekallcleared');
+                $('#2to3weeks').addClass('twoto3weekdefault');
+                $('#2to3weeksip').html('');
+                var two3weekdata = Table0[2].SIPDAYSDURATIONCOUNT;
+                var two3weeksamount = Table0[2].SIPDAYSGROSSAMOUNTTOTAL;
+                if (two3weekdata > 0 && two3weeksamount > 0) {
+                    $('#div2to3weekscount').html(Table0[2].SIPDAYSDURATIONCOUNT);
+                    var sip2to3weeksamountamountdecimalconversion = parseFloat(Table0[2].SIPDAYSGROSSAMOUNTTOTAL).toFixed(2);
+                    var commaseparatesip2to3weeksamountconversion = commaSeparateNumber(sip2to3weeksamountamountdecimalconversion);
+                    $('#div2to3weeksamount').append('&#8377;' + commaseparatesip2to3weeksamountconversion);
+                }
+                else {
+                    $('#2to3weeksip').html('All Cleared').addClass('allclear');
+                    $('#2to3weeks').addClass('twoto3weekallcleared');
+                }
+                //$('#div2to3weekscount').html(Table0[2].SIPDAYSDURATIONCOUNT);
+                //$('#div2to3weeksamount').append('&#8377;' + parseFloat(Table0[2].SIPDAYSGROSSAMOUNTTOTAL).toFixed(2));
+                $('#above3weeksdiv').removeClass('twoto3weekallcleared');
+                $('#above3weeksmsg').html('');
+                $('#above3weeksdiv').addClass('twoto3weekdefault');
+                var sipabove3weeksdata = Table0[3].SIPDAYSDURATIONCOUNT;
+                var sipabove3weeksamount = Table0[3].SIPDAYSGROSSAMOUNTTOTAL;
+                if (sipabove3weeksdata > 0 && sipabove3weeksamount > 0) {
+                    $('#divAbove3weekscount').html(Table0[3].SIPDAYSDURATIONCOUNT);
+                    var sipabove3weeksamountdecimalconversion = parseFloat(Table0[3].SIPDAYSGROSSAMOUNTTOTAL).toFixed(2);
+                    var commaseparatesipbove3weeksamountconversion = commaSeparateNumber(sipabove3weeksamountdecimalconversion);
+                    $('#divAbove3weeksamount').append('&#8377;' + commaseparatesipbove3weeksamountconversion);
+                }
+                else {
+                    $('#above3weeksmsg').html('All Cleared').addClass('allclear');
+                    $('#above3weeksdiv').addClass('twoto3weekallcleared');
+
+                }
+                //$('#divAbove3weekscount').html(Table0[3].SIPDAYSDURATIONCOUNT);
+                //$('#divAbove3weeksamount').append('&#8377;' + parseFloat(Table0[3].SIPDAYSGROSSAMOUNTTOTAL).toFixed(2));
+
+                //$('#divGrandTotalcount').html(Table0[4].SIPDAYSDURATIONCOUNT);
+                //$('#divGrandTotalamount').append('&#8377;' + parseFloat(Table0[4].SIPDAYSGROSSAMOUNTTOTAL).toFixed(2));
+                $('#sipgrandtotaldivmsg').html('');
+                $('#sipgrandtotaldiv').addClass('grandtotal-allcleared');
+                var sipgrandtotalcount = Table0[4].SIPDAYSDURATIONCOUNT;
+                var sipgarandtotalamount = Table0[4].SIPDAYSGROSSAMOUNTTOTAL;
+                if (sipgrandtotalcount > 0 && sipgarandtotalamount > 0) {
+                    $('#divGrandTotalcount').html(Table0[4].SIPDAYSDURATIONCOUNT);
+                    var sipGrandTotalamountdecimalconversion = parseFloat(Table0[4].SIPDAYSGROSSAMOUNTTOTAL).toFixed(2);
+                    var commaseparatesipgrandamountconversion = commaSeparateNumber(sipGrandTotalamountdecimalconversion);
+                    $('#divGrandTotalamount').append('&#8377;' + commaseparatesipgrandamountconversion);
+                }
+                else {
+                    $('#sipgrandtotaldivmsg').html('All Cleared').addClass('allclear');
+                }
+
+                //-----------END OF SIP DATA----
+                //-----------NON SIP DATA ----------
+
+                //$('#NONdivupto1weekcount').html(Table1[0].NONSIPDAYSDURATIONCOUNT);
+                //$('#NONdivupto1weekamount').append('&#8377;' + parseFloat(Table1[0].NONSIPDAYSGROSSAMOUNTTOTAL).toFixed(2));
+
+                //$('#NONdiv1to2weekcount').html(Table1[1].NONSIPDAYSDURATIONCOUNT);
+                //$('#NONdiv1to2weekamount').append('&#8377;' + parseFloat(Table1[1].NONSIPDAYSGROSSAMOUNTTOTAL).toFixed(2));
+                $('#upto1weeknonsipdiv').addClass('twoto3weekallcleared');
+                $('#upto1weeknonsipdivmsg').html('');
+                var upto1weeknonsipdata = Table1[0].NONSIPDAYSDURATIONCOUNT;
+                var upto1weeknonsipamount = Table1[0].NONSIPDAYSGROSSAMOUNTTOTAL;
+                if (upto1weeknonsipdata > 0 && upto1weeknonsipamount > 0) {
+
+                    $('#NONdivupto1weekcount').html(Table1[0].NONSIPDAYSDURATIONCOUNT);
+                    var nonsip1weekamountdecimalconversion = parseFloat(Table1[0].NONSIPDAYSGROSSAMOUNTTOTAL).toFixed(2);
+                    var commaseparatenonsip1weekamountconversion = commaSeparateNumber(nonsip1weekamountdecimalconversion);
+                    $('#NONdivupto1weekamount').append('&#8377;' + commaseparatenonsip1weekamountconversion);
+                }
+                else {
+                    $('#upto1weeknonsipdivmsg').html('All Cleared').addClass('allclear');
+
+                }
+
+                $('#1to2weeksnonsipdiv').addClass('twoto3weekallcleared');
+                $('#1to2weeksnonsipdivmsg').html('');
+                var oneto2weeksnonsipdata = Table1[1].NONSIPDAYSDURATIONCOUNT;
+                var oneto2weeksnonsipamount = Table1[1].NONSIPDAYSGROSSAMOUNTTOTAL;
+                if (oneto2weeksnonsipdata > 0 && oneto2weeksnonsipamount > 0) {
+                    $('#NONdiv1to2weekcount').html(Table1[1].NONSIPDAYSDURATIONCOUNT);
+                    var nonsip1to2weekamountdecimalconversion = parseFloat(Table1[1].NONSIPDAYSGROSSAMOUNTTOTAL).toFixed(2);
+                    var commaseparatenonsip1to2weekamountconversion = commaSeparateNumber(nonsip1to2weekamountdecimalconversion);
+                    $('#NONdiv1to2weekamount').append('&#8377;' + commaseparatenonsip1to2weekamountconversion);
+                }
+                else {
+                    $('#1to2weeksnonsipdivmsg').html('All Cleared').addClass('allclear');
+                }
+                //$('#NONdiv2to3weekscount').html(Table1[2].NONSIPDAYSDURATIONCOUNT);
+                //$('#NONdiv2to3weeksamount').append('&#8377;' + parseFloat(Table1[2].NONSIPDAYSGROSSAMOUNTTOTAL).toFixed(2));
+                $('#2to3weeks1').removeClass('twoto3weekallcleared');
+                $('#2to3weeks1').addClass('twoto3weekdefault');
+                $('#2to3weeksip1').html('');
+                var two3weekdata1 = Table1[2].NONSIPDAYSDURATIONCOUNT;
+                var two3weeksamount1 = Table1[2].NONSIPDAYSGROSSAMOUNTTOTAL;
+                if (two3weekdata1 > 0 && two3weeksamount1 > 0) {
+                    $('#NONdiv2to3weekscount').html(Table1[2].NONSIPDAYSDURATIONCOUNT);
+                    var nonsip2to3weekamountdecimalconversion = parseFloat(Table1[2].NONSIPDAYSGROSSAMOUNTTOTAL).toFixed(2);
+                    var commaseparatenonsip2to3weekamountconversion = commaSeparateNumber(nonsip2to3weekamountdecimalconversion);
+                    $('#NONdiv2to3weeksamount').append('&#8377;' + commaseparatenonsip2to3weekamountconversion);
+
+                }
+                else {
+                    $('#2to3weeksip1').html('All Cleared').addClass('allclear');
+                    $('#2to3weeks1').addClass('twoto3weekallcleared');
+                }
+
+                //$('#NONdivAbove3weekscount').html(Table1[3].NONSIPDAYSDURATIONCOUNT);
+                //$('#NONdivAbove3weeksamount').append('&#8377;' + parseFloat(Table1[3].NONSIPDAYSGROSSAMOUNTTOTAL).toFixed(2));
+                $('#above3weeksdiv1').removeClass('twoto3weekallcleared');
+                $('#above3weeksmsg1').html('');
+                $('#above3weeksdiv1').addClass('twoto3weekdefault');
+                var sipabove3weeksdata1 = Table1[3].NONSIPDAYSDURATIONCOUNT;
+                var sipabove3weeksamount1 = Table1[3].NONSIPDAYSGROSSAMOUNTTOTAL;
+                if (sipabove3weeksdata1 > 0 && sipabove3weeksamount1 > 0) {
+                    $('#NONdivAbove3weekscount').html(Table1[3].NONSIPDAYSDURATIONCOUNT);
+                    var nonsipAbove3weekamountdecimalconversion = parseFloat(Table1[3].NONSIPDAYSGROSSAMOUNTTOTAL).toFixed(2);
+                    var commaseparatenonsipAbove3weekamountconversion = commaSeparateNumber(nonsipAbove3weekamountdecimalconversion);
+                    $('#NONdivAbove3weeksamount').append('&#8377;' + commaseparatenonsipAbove3weekamountconversion);
+
+                }
+                else {
+                    $('#above3weeksmsg1').html('All Cleared').addClass('allclear');
+                    $('#above3weeksdiv1').addClass('twoto3weekallcleared');
+
+                }
+
+                //$('#NONdivGrandTotalcount').html(Table1[4].NONSIPDAYSDURATIONCOUNT);
+                //$('#NONdivGrandTotalamount').append('&#8377;' + parseFloat(Table1[4].NONSIPDAYSGROSSAMOUNTTOTAL).toFixed(2));
+                $('#nonsipgrandtotaldivmsg').html('');
+                $('#nonsipgrandtotaldiv').addClass('grandtotal-allcleared');
+                var nonsipgrandtotalcount = Table1[4].NONSIPDAYSDURATIONCOUNT;
+                var nonsipgarandtotalamount = Table1[4].NONSIPDAYSGROSSAMOUNTTOTAL;
+                if (nonsipgrandtotalcount > 0 && nonsipgarandtotalamount > 0) {
+                    $('#NONdivGrandTotalcount').html(Table1[4].NONSIPDAYSDURATIONCOUNT);
+                    var nonsipgrandtotalamountdecimalconversion = parseFloat(Table1[4].NONSIPDAYSGROSSAMOUNTTOTAL).toFixed(2);
+                    var commaseparatenonsipgrandtotalamountconversion = commaSeparateNumber(nonsipgrandtotalamountdecimalconversion);
+                    $('#NONdivGrandTotalamount').append('&#8377;' + commaseparatenonsipgrandtotalamountconversion);
+                }
+                else {
+                    $('#nonsipgrandtotaldivmsg').html('All Cleared').addClass('allclear');
+
+                }
+
+                if ((sipgrandtotalcount > 0 && sipgarandtotalamount > 0) || (nonsipgrandtotalcount > 0 && nonsipgarandtotalamount > 0)) {
+                    $('#allcleareddiv').show();
+                }
+                else {
+                    $('#loader').hide();
+                    $('#maindiv').show();
+                    $('#allcleareddiv').hide();
+                    return;
+                }
+
+                //-----------END OF NON SIP DATA----
+
+                ////------------------------------
+                var rows = Table2;
+                var j = 1;
+                if (rows != null && rows != "") {
+                    var rowcnt = rows.length - 1;
+                    for (var i = 0; i <= rowcnt; i++) {
+                        linechart[j] = [rows[i].TRANSACTIONTYPE, rows[i].COUNT, rows[i].AMOUNT];
+                        j = j + 1;
+                    }
+                }
+                //---------------------------------
+                ////------------------------------
+                var rowsip = Table3;
+                var S = 1;
+                if (rowsip != null && rowsip != "") {
+                    var rowcntsip = rowsip.length - 1;
+                    for (var i = 0; i <= rowcntsip; i++) {
+                        SIParray[S] = [rowsip[i].TRANSACTIONMODES, rowsip[i].AMOUNT];
+                        S = S + 1;
+                    }
+                }
+                //---------------------------------
+                ////------------------------------
+                var rownonsip = Table4;
+                var NS = 1;
+
+                if (rownonsip != null && rownonsip != "") {
+                    var rowcntnonsip = rownonsip.length - 1;
+                    for (var i = 0; i <= rowcntnonsip; i++) {
+                        NONSIParray[NS] = [rownonsip[i].TRANSACTIONMODES, rownonsip[i].AMOUNT];
+                        NS = NS + 1;
+                    }
+                }
+                //--------------------------------
+
+
+                ////----------table data------
+
+                $('#tabledata').html("");
+
+                var rowst = Table5;
+
+                if (rowst != null && rowst != "") {
+                    var rowcntt = rowst.length - 1;
+                    var i = 0;
+                    var st = '';
+                    st += '<table class="bankingdata">';
+                    st += '<tbody>';
+                    st += '<th>Ageing</th>';
+                    st += '<th>SIP Count</th>';
+                    st += '<th>SIP Amount</th>';
+                    st += '<th>Non-SIP Count</th>';
+                    st += '<th>Non-SIP Amount</th>';
+                    st += '<th>Grand Total Count</th>';
+                    st += '<th>Grand Total Amount</th>';
+
+                    for (i ; i <= rowcntt; i++) {
+
+                        //if (rows[i].fund_code != null && rows[i].fund_code != "") {
+                        st += '<tr>';
+                        st += '<td class="bd tablewidth1">' + rowst[i].Ageing + '</td>';
+                        st += '<td class="bd">' + rowst[i].sipcount + '</td>';
+                        var sipamountdecimalconversion = parseFloat(rowst[i].sipamount).toFixed(2);
+                        var commaseparatesipamountconversion = commaSeparateNumber(sipamountdecimalconversion);
+                        st += '<td class="bd">' + '&#8377;' + commaseparatesipamountconversion + '</td>';
+                        st += '<td class="bd">' + rowst[i].nonsipcount + '</td>';
+                        var nonsipamountdecimalconversion = parseFloat(rowst[i].nonsipamount).toFixed(2);
+                        var commaseparatenonsipamountconversion = commaSeparateNumber(nonsipamountdecimalconversion);
+                        st += '<td class="bd">' + '&#8377;' + commaseparatenonsipamountconversion + '</td>';
+                        st += '<td class="bd">' + rowst[i].gtcount + '</td>';
+                        var gtamountdecimalconversion = parseFloat(rowst[i].gtamount).toFixed(2);
+                        var commaseparategtamountconversion = commaSeparateNumber(gtamountdecimalconversion);
+                        st += '<td class="bd">' + '&#8377;' + commaseparategtamountconversion + '</td>';
+                        st += '</tr>';
+
+                    }
+                    st += '</tbody>';
+                    st += '</table>';
+                    $('#tabledata').append(st);
+
+                }
+                ////------------------------------
+                //////----------table data1------
+
+
+                $('#tabledatasipmode').html("");
+                var rowssip = Table6;
+                var rowssipgt = Table8;
+                if (rowssip != null && rowssip != "") {
+                    var rowcntsip = rowssip.length - 1;
+                    var lengthofrowssipgt = rowssipgt.length;
+                    var i = 0;
+                    var st = '';
+                    st += '<table class="bankingdata">';
+                    st += '<tbody>';
+                    st += '<th>Type</th>';
+                    st += '<th style="width:10%">1 Week Count</th>';
+                    st += '<th style="width:10%">1 Week Amount</th>';
+                    st += '<th style="width:10%">1-2 Weeks Count</th>';
+                    st += '<th style="width:10%">1-2 Weeks Amount</th>';
+                    st += '<th style="width:10%">2-3 Weeks Count</th>';
+                    st += '<th style="width:10%">2-3 Weeks Amount</th>';
+                    st += '<th style="width:10%">>3 Weeks Count</th>';
+                    st += '<th style="width:10%">>3 Weeks Amount</th>';
+                    st += '<th style="width:10%">Gr.Total Count</th>';
+                    st += '<th style="width:10%">Gr.Total Amount</th>';
+
+                    for (i ; i <= rowcntsip; i++) {
+
+                        //if (rows[i].fund_code != null && rows[i].fund_code != "") {
+                        st += '<tr>';
+                        st += '<td class="bd1 tablewidth">' + rowssip[i].Type + '</td>';
+                        st += '<td class="bd1">' + rowssip[i].oneweekcount + '</td>';
+                        var oneweekamountdecimalconversion = parseFloat(rowssip[i].oneweekamount).toFixed(2);
+                        var commaseparateoneweekamountconversion = commaSeparateNumber(oneweekamountdecimalconversion);
+                        st += '<td class="bd1">' + '&#8377;' + commaseparateoneweekamountconversion + '</td>';
+                        st += '<td class="bd1">' + rowssip[i].oneto2weekcount + '</td>';
+                        var oneto2weekamountdecimalconversion = parseFloat(rowssip[i].oneto2weekamount).toFixed(2);
+                        var commaseparateoneto2weekamountconversion = commaSeparateNumber(oneto2weekamountdecimalconversion);
+                        st += '<td class="bd1">' + '&#8377;' + commaseparateoneto2weekamountconversion + '</td>';
+                        st += '<td class="bd1">' + rowssip[i].twoto3weekcount + '</td>';
+                        var twoto3weekamountdecimalconversion = parseFloat(rowssip[i].twoto3weekamount).toFixed(2);
+                        var commaseparatetwoto3weekamountconversion = commaSeparateNumber(twoto3weekamountdecimalconversion);
+                        st += '<td class="bd1">' + '&#8377;' + commaseparatetwoto3weekamountconversion + '</td>';
+                        st += '<td class="bd1">' + rowssip[i].above3weekscount + '</td>';
+                        var above3weeksamountdecimalconversion = parseFloat(rowssip[i].above3weeksamount).toFixed(2);
+                        var commaseparateabove3weeksamountconversion = commaSeparateNumber(above3weeksamountdecimalconversion);
+                        st += '<td class="bd1">' + '&#8377;' + commaseparateabove3weeksamountconversion + '</td>';
+                        st += '<td class="bd1">' + rowssip[i].grandtotalcount + '</td>';
+                        var above3weeksamountdecimalconversion = parseFloat(rowssip[i].grandtotalamount).toFixed(2);
+                        var commaseparateabove3weeksamountconversion = commaSeparateNumber(above3weeksamountdecimalconversion);
+                        st += '<td class="bd1">' + '&#8377;' + commaseparateabove3weeksamountconversion + '</td>';
+                        st += '</tr>';
+
+                    }
+                    if (lengthofrowssipgt != 0 && lengthofrowssipgt != null && lengthofrowssipgt != "") {
+                        st += '<tr>';
+                        st += '<td class="bd1 tablewidth">' + rowssipgt[0].Type + '</td>';
+                        st += '<td class="bd1">' + rowssipgt[0].oneweekcount + '</td>';
+                        var oneweekamountdecimalconversion = parseFloat(rowssipgt[0].oneweekamount).toFixed(2);
+                        var commaseparateoneweekamountconversion = commaSeparateNumber(oneweekamountdecimalconversion);
+                        st += '<td class="bd1">' + '&#8377;' + commaseparateoneweekamountconversion + '</td>';
+                        st += '<td class="bd1">' + rowssipgt[0].oneto2weekcount + '</td>';
+                        var oneto2weekamountdecimalconversion = parseFloat(rowssipgt[0].oneto2weekamount).toFixed(2);
+                        var commaseparateoneto2weekamountconversion = commaSeparateNumber(oneto2weekamountdecimalconversion);
+                        st += '<td class="bd1">' + '&#8377;' + commaseparateoneto2weekamountconversion + '</td>';
+                        st += '<td class="bd1">' + rowssipgt[0].twoto3weekcount + '</td>';
+                        var twoto3weekamountdecimalconversion = parseFloat(rowssipgt[0].twoto3weekamount).toFixed(2);
+                        var commaseparatetwoto3weekamountconversion = commaSeparateNumber(twoto3weekamountdecimalconversion);
+                        st += '<td class="bd1">' + '&#8377;' + commaseparatetwoto3weekamountconversion + '</td>';
+                        st += '<td class="bd1">' + rowssipgt[0].above3weekscount + '</td>';
+                        var above3weeksamountdecimalconversion = parseFloat(rowssipgt[0].above3weeksamount).toFixed(2);
+                        var commaseparateabove3weeksamountconversion = commaSeparateNumber(above3weeksamountdecimalconversion);
+                        st += '<td class="bd1">' + '&#8377;' + commaseparateabove3weeksamountconversion + '</td>';
+                        st += '<td class="bd1">' + rowssipgt[0].grandtotalcount + '</td>';
+                        var gtdecimalconversion = parseFloat(rowssipgt[0].grandtotalamount).toFixed(2);
+                        var commaseparategtconversion = commaSeparateNumber(gtdecimalconversion);
+                        st += '<td class="bd1">' + '&#8377;' + commaseparategtconversion + '</td>';
+                        st += '</tr>';
+                    }
+                    st += '</tbody>';
+                    st += '</table>';
+
+                    $('#tabledatasipmode').append(st);
+
+                }
+                //////------------------------------
+                //////----------table data2------
+
+
+                $('#tabledatanonsipmode').html("");
+
+                var rowsnonsip = Table7;
+                var rowsnonsipgt = Table9;
+                var rowsgt = Table10
+                if (rowsnonsip != null && rowsnonsip != "") {
+                    var rowcntnonsip = rowsnonsip.length - 1;
+                    var lengthofrowsnonsipgt = rowsnonsipgt.length;
+                    var i = 0;
+                    var st = '';
+                    st += '<table class="bankingdata">';
+                    st += '<tbody>';
+                    st += '<th>Type</th>';
+                    st += '<th style="width:10%">1 Week Count</th>';
+                    st += '<th style="width:10%">1 Week Amount</th>';
+                    st += '<th style="width:10%">1-2 Weeks Count</th>';
+                    st += '<th style="width:10%">1-2 Weeks Amount</th>';
+                    st += '<th style="width:10%">2-3 Weeks Count</th>';
+                    st += '<th style="width:10%">2-3 Weeks Amount</th>';
+                    st += '<th style="width:10%">>3 Weeks Count</th>';
+                    st += '<th style="width:10%">>3 Weeks Amount</th>';
+                    st += '<th style="width:10%">Gr.Total Count</th>';
+                    st += '<th style="width:10%">Gr.Total Amount</th>';
+
+                    for (i ; i <= rowcntnonsip; i++) {
+
+                        //if (rows[i].fund_code != null && rows[i].fund_code != "") {
+                        st += '<tr>';
+                        st += '<td class="bd4 tablewidth">' + rowsnonsip[i].Type + '</td>';
+                        st += '<td class="bd4">' + rowsnonsip[i].oneweekcount + '</td>';
+                        var oneweekamountdecimalconversion = parseFloat(rowsnonsip[i].oneweekamount).toFixed(2);
+                        var commaseparateoneweekamountconversion = commaSeparateNumber(oneweekamountdecimalconversion);
+                        st += '<td class="bd4">' + '&#8377;' + commaseparateoneweekamountconversion + '</td>';
+                        st += '<td class="bd4">' + rowsnonsip[i].oneto2weekcount + '</td>';
+                        var oneto2weekamountdecimalconversion = parseFloat(rowsnonsip[i].oneto2weekamount).toFixed(2);
+                        var commaseparateoneto2weekamountconversion = commaSeparateNumber(oneto2weekamountdecimalconversion);
+                        st += '<td class="bd4">' + '&#8377;' + commaseparateoneto2weekamountconversion + '</td>';
+                        st += '<td class="bd4">' + rowsnonsip[i].twoto3weekcount + '</td>';
+                        var twoto3weekamountdecimalconversion = parseFloat(rowsnonsip[i].twoto3weekamount).toFixed(2);
+                        var commaseparatetwoto3weekamountconversion = commaSeparateNumber(twoto3weekamountdecimalconversion);
+                        st += '<td class="bd4">' + '&#8377;' + commaseparatetwoto3weekamountconversion + '</td>';
+                        st += '<td class="bd4">' + rowsnonsip[i].above3weekscount + '</td>';
+                        var above3weeksamountdecimalconversion = parseFloat(rowsnonsip[i].above3weeksamount).toFixed(2);
+                        var commaseparateabove3weeksamountconversion = commaSeparateNumber(above3weeksamountdecimalconversion);
+                        st += '<td class="bd4">' + '&#8377;' + commaseparateabove3weeksamountconversion + '</td>';
+                        st += '<td class="bd4">' + rowsnonsip[i].grandtotalcount + '</td>';
+                        var grandtotalamountdecimalconversion = parseFloat(rowsnonsip[i].grandtotalamount).toFixed(2);
+                        var commaseparategrandtotalamountconversion = commaSeparateNumber(grandtotalamountdecimalconversion);
+                        st += '<td class="bd4">' + '&#8377;' + commaseparategrandtotalamountconversion + '</td>';
+                        st += '</tr>';
+
+                    }
+                    if (lengthofrowsnonsipgt != 0 && lengthofrowsnonsipgt != null && lengthofrowsnonsipgt != "") {
+                        st += '<tr>';
+                        st += '<td class="bd4 tablewidth">' + rowsnonsipgt[0].Type + '</td>';
+                        st += '<td class="bd4">' + rowsnonsipgt[0].oneweekcount + '</td>';
+                        var oneweekamountdecimalconversion = parseFloat(rowsnonsipgt[0].oneweekamount).toFixed(2);
+                        var commaseparateoneweekamountconversion = commaSeparateNumber(oneweekamountdecimalconversion);
+                        st += '<td class="bd4">' + '&#8377;' + commaseparateoneweekamountconversion + '</td>';
+                        st += '<td class="bd4">' + rowsnonsipgt[0].oneto2weekcount + '</td>';
+                        var oneto2weekamountdecimalconversion = parseFloat(rowsnonsipgt[0].oneto2weekamount).toFixed(2);
+                        var commaseparateoneto2weekamountconversion = commaSeparateNumber(oneto2weekamountdecimalconversion);
+                        st += '<td class="bd4">' + '&#8377;' + commaseparateoneto2weekamountconversion + '</td>';
+                        st += '<td class="bd4">' + rowsnonsipgt[0].twoto3weekcount + '</td>';
+                        var twoto3weekamountdecimalconversion = parseFloat(rowsnonsipgt[0].twoto3weekamount).toFixed(2);
+                        var commaseparatetwoto3weekamountconversion = commaSeparateNumber(twoto3weekamountdecimalconversion);
+                        st += '<td class="bd4">' + '&#8377;' + commaseparatetwoto3weekamountconversion + '</td>';
+                        st += '<td class="bd4">' + rowsnonsipgt[0].above3weekscount + '</td>';
+                        var above3weeksamountdecimalconversion = parseFloat(rowsnonsipgt[0].above3weeksamount).toFixed(2);
+                        var commaseparateabove3weeksamountconversion = commaSeparateNumber(above3weeksamountdecimalconversion);
+                        st += '<td class="bd4">' + '&#8377;' + commaseparateabove3weeksamountconversion + '</td>';
+                        st += '<td class="bd4">' + rowsnonsipgt[0].grandtotalcount + '</td>';
+                        var grandtotalamountdecimalconversion = parseFloat(rowsnonsipgt[0].grandtotalamount).toFixed(2);
+                        var commaseparategrandtotalamountconversion = commaSeparateNumber(grandtotalamountdecimalconversion);
+                        st += '<td class="bd4">' + '&#8377;' + commaseparategrandtotalamountconversion + '</td>';
+                        st += '</tr>';
+                    }
+                    st += '</tbody>';
+                    st += '</table>';
+                    $('#tabledatanonsipmode').append(st);
+
+                }
+                //////------------------------------
+                //////----------table data10------
+
+
+                $('#sipnonsipgrandtotal').html("");
+
+
+                var rowsgt = Table10
+                if (rowsgt != null && rowsgt != "") {
+                    var rowcntnonsipgt = rowsgt.length - 1;
+                    var i = 0;
+                    var st = '';
+                    st += '<table class="bankingdata">';
+                    st += '<tbody>';
+                    st += '<th>Type</th>';
+                    st += '<th style="width:10%">1 Week Count</th>';
+                    st += '<th style="width:10%">1 Week Amount</th>';
+                    st += '<th style="width:10%">1-2 Weeks Count</th>';
+                    st += '<th style="width:10%">1-2 Weeks Amount</th>';
+                    st += '<th style="width:10%">2-3 Weeks Count</th>';
+                    st += '<th style="width:10%">2-3 Weeks Amount</th>';
+                    st += '<th style="width:10%">>3 Weeks Count</th>';
+                    st += '<th style="width:10%">>3 Weeks Amount</th>';
+                    st += '<th style="width:10%">Gr.Total Count</th>';
+                    st += '<th style="width:10%">Gr.Total Amount</th>';
+
+                    for (i ; i <= rowcntnonsipgt; i++) {
+                        st += '<tr>';
+                        st += '<td class="bd5 tablewidth">' + rowsgt[i].Type + '</td>';
+                        st += '<td class="bd5">' + rowsgt[i].oneweekcount + '</td>';
+                        var oneweekamountdecimalconversion = parseFloat(rowsgt[i].oneweekamount).toFixed(2);
+                        var commaseparateoneweekamountconversion = commaSeparateNumber(oneweekamountdecimalconversion);
+                        st += '<td class="bd5">' + '&#8377;' + commaseparateoneweekamountconversion + '</td>';
+                        st += '<td class="bd5">' + rowsgt[i].oneto2weekcount + '</td>';
+                        var oneto2weekamountdecimalconversion = parseFloat(rowsgt[i].oneto2weekamount).toFixed(2);
+                        var commaseparateoneto2weekamountconversion = commaSeparateNumber(oneto2weekamountdecimalconversion);
+                        st += '<td class="bd5">' + '&#8377;' + commaseparateoneto2weekamountconversion + '</td>';
+                        st += '<td class="bd5">' + rowsgt[i].twoto3weekcount + '</td>';
+                        var twoto3weekamountdecimalconversion = parseFloat(rowsgt[i].twoto3weekamount).toFixed(2);
+                        var commaseparatetwoto3weekamountconversion = commaSeparateNumber(twoto3weekamountdecimalconversion);
+                        st += '<td class="bd5">' + '&#8377;' + commaseparatetwoto3weekamountconversion + '</td>';
+                        st += '<td class="bd5">' + rowsgt[i].above3weekscount + '</td>';
+                        var above3weeksamountdecimalconversion = parseFloat(rowsgt[i].above3weeksamount).toFixed(2);
+                        var commaseparateabove3weeksamountconversion = commaSeparateNumber(above3weeksamountdecimalconversion);
+                        st += '<td class="bd5">' + '&#8377;' + commaseparateabove3weeksamountconversion + '</td>';
+                        st += '<td class="bd5">' + rowsgt[i].grandtotalcount + '</td>';
+                        var grandtotalamountdecimalconversion = parseFloat(rowsgt[i].grandtotalamount).toFixed(2);
+                        var commaseparategrandtotalamountconversion = commaSeparateNumber(grandtotalamountdecimalconversion);
+                        st += '<td class="bd5">' + '&#8377;' + commaseparategrandtotalamountconversion + '</td>';
+                        st += '</tr>';
+
+                    }
+
+                    st += '</tbody>';
+                    st += '</table>';
+                    $('#sipnonsipgrandtotal').append(st);
+
+                }
+                //////------------------------------
+
+                //////----------table data5------
+
+
+                $('#tabledatascheme').html("");
+
+                var rowsscheme = Table11;
+                var rowsschemegt = Table12;
+                if (rowsscheme != null && rowsscheme != "") {
+                    var rowcntscheme = rowsscheme.length - 1;
+                    var lengthofrowsschemegt = rowsschemegt.length
+                    var i = 0;
+                    var st = '';
+                    st += '<table class="bankingdata">';
+                    st += '<tbody>';
+                    st += '<tr>';
+                    st += '<th style="width:10%">Type</th>';
+                    st += '<th style="width:10%">1 Week Count</th>';
+                    st += '<th style="width:10%">1 Week Amount</th>';
+                    st += '<th style="width:10%">1-2 Weeks Count</th>';
+                    st += '<th style="width:10%">1-2 Weeks Amount</th>';
+                    st += '<th style="width:10%">2-3 Weeks Count</th>';
+                    st += '<th style="width:10%">2-3 Weeks Amount</th>';
+                    st += '<th style="width:10%">>3 Weeks Count</th>';
+                    st += '<th style="width:10%">>3 Weeks Amount</th>';
+                    st += '<th style="width:10%">Gr.Total Count</th>';
+                    st += '<th style="width:10%">Gr.Total Amount</th>';
+                    st += '<tr>';
+
+                    for (i ; i <= rowcntscheme; i++) {
+
+                        //if (rows[i].fund_code != null && rows[i].fund_code != "") {
+                        st += '<tr>';
+                        st += '<td class="bd3 tablewidth">' + rowsscheme[i].CHRSCHEME + '</td>';
+                        st += '<td class="bd3">' + rowsscheme[i].oneweekcount + '</td>';
+                        var oneweekamountdecimalconversion = parseFloat(rowsscheme[i].oneweekamount).toFixed(2);
+                        var commaseparateoneweekamountconversion = commaSeparateNumber(oneweekamountdecimalconversion);
+                        st += '<td class="bd3">' + '&#8377;' + commaseparateoneweekamountconversion + '</td>';
+                        st += '<td class="bd3">' + rowsscheme[i].oneto2weekcount + '</td>';
+                        var oneto2weekamountdecimalconversion = parseFloat(rowsscheme[i].oneto2weekamount).toFixed(2);
+                        var commaseparateoneto2weekamountconversion = commaSeparateNumber(oneto2weekamountdecimalconversion);
+                        st += '<td class="bd3">' + '&#8377;' + commaseparateoneto2weekamountconversion + '</td>';
+                        st += '<td class="bd3">' + rowsscheme[i].twoto3weekcount + '</td>';
+                        var twoto3weekamountdecimalconversion = parseFloat(rowsscheme[i].twoto3weekamount).toFixed(2);
+                        var commaseparatetwoto3weekamountconversion = commaSeparateNumber(twoto3weekamountdecimalconversion);
+                        st += '<td class="bd3">' + '&#8377;' + commaseparatetwoto3weekamountconversion + '</td>';
+                        st += '<td class="bd3">' + rowsscheme[i].above3weekscount + '</td>';
+                        var above3weeksamountdecimalconversion = parseFloat(rowsscheme[i].above3weeksamount).toFixed(2);
+                        var commaseparateabove3weeksamountconversion = commaSeparateNumber(above3weeksamountdecimalconversion);
+                        st += '<td class="bd3">' + '&#8377;' + commaseparateabove3weeksamountconversion + '</td>';
+                        st += '<td class="bd3">' + rowsscheme[i].grandtotalcount + '</td>';
+                        var grandtotalamountdecimalconversion = parseFloat(rowsscheme[i].grandtotalamount).toFixed(2);
+                        var commaseparategrandtotalamountconversion = commaSeparateNumber(grandtotalamountdecimalconversion);
+                        st += '<td class="bd3">' + '&#8377;' + commaseparategrandtotalamountconversion + '</td>';
+                        st += '</tr>';
+
+                    }
+                    if (lengthofrowsschemegt != 0 && lengthofrowsschemegt != null && lengthofrowsschemegt != "") {
+                        st += '<tr>';
+                        st += '<td class="bd3 tablewidth">' + rowsschemegt[0].CHRSCHEME + '</td>';
+                        st += '<td class="bd3">' + rowsschemegt[0].oneweekcount + '</td>';
+                        var oneweekamountdecimalconversion = parseFloat(rowsschemegt[0].oneweekamount).toFixed(2);
+                        var commaseparateoneweekamountconversion = commaSeparateNumber(oneweekamountdecimalconversion);
+                        st += '<td class="bd3">' + '&#8377;' + commaseparateoneweekamountconversion + '</td>';
+                        st += '<td class="bd3">' + rowsschemegt[0].oneto2weekcount + '</td>';
+                        var oneto2weekamountdecimalconversion = parseFloat(rowsschemegt[0].oneto2weekamount).toFixed(2);
+                        var commaseparateoneto2weekamountconversion = commaSeparateNumber(oneto2weekamountdecimalconversion);
+                        st += '<td class="bd3">' + '&#8377;' + commaseparateoneto2weekamountconversion + '</td>';
+                        st += '<td class="bd3">' + rowsschemegt[0].twoto3weekcount + '</td>';
+                        var twoto3weekamountdecimalconversion = parseFloat(rowsschemegt[0].twoto3weekamount).toFixed(2);
+                        var commaseparatetwoto3weekamountconversion = commaSeparateNumber(twoto3weekamountdecimalconversion);
+                        st += '<td class="bd3">' + '&#8377;' + commaseparatetwoto3weekamountconversion + '</td>';
+                        st += '<td class="bd3">' + rowsschemegt[0].above3weekscount + '</td>';
+                        var above3weeksamountdecimalconversion = parseFloat(rowsschemegt[0].above3weeksamount).toFixed(2);
+                        var commaseparateabove3weeksamountconversion = commaSeparateNumber(above3weeksamountdecimalconversion);
+                        st += '<td class="bd3">' + '&#8377;' + commaseparateabove3weeksamountconversion + '</td>';
+                        st += '<td class="bd3">' + rowsschemegt[0].grandtotalcount + '</td>';
+                        var grandtotalamountdecimalconversion = parseFloat(rowsschemegt[0].grandtotalamount).toFixed(2);
+                        var commaseparategrandtotalamountconversion = commaSeparateNumber(grandtotalamountdecimalconversion);
+                        st += '<td class="bd3">' + '&#8377;' + commaseparategrandtotalamountconversion + '</td>';
+                        st += '</tr>';
+                    }
+                    st += '</tbody>';
+                    st += '</table>';
+
+                    $('#tabledatascheme').append(st);
+
+                }
+                //////------------------------------
+                $('#maindiv').show();
+                $('#loader').hide();
+            }
+        }).done(function () {
+            //------------line chart
+
+            google.charts.setOnLoadCallback(columnchart);
+
+            function columnchart() {
+                var datar = google.visualization.arrayToDataTable(linechart);
+
+                var view = new google.visualization.DataView(datar);
+
+                view.setColumns([0, //The "descr column"
+                1, //Downlink column
+                {
+                    calc: "stringify",
+                    sourceColumn: 1, // Create an annotation column with source column "1"
+                    type: "string",
+                    role: "annotation"
+                },
+                2, // Uplink column
+                {
+                    calc: "stringify",
+                    sourceColumn: 2, // Create an annotation column with source column "2"
+                    type: "string",
+                    role: "annotation"
+                }]);
+
+                var columnWrapper = new google.visualization.ChartWrapper({
+                    chartType: 'ColumnChart',
+                    containerId: 'LINECHART',
+                    dataTable: view,
+                    options: {
+                        legend: { position: 'bottom', alignment: 'start' }
+
+                    }
+
+
+                });
+
+                columnWrapper.draw();
+            }
+            //------------end of line chart------------
+            //---TRANSACTION MODE WISE SIP-------
+            var data = google.visualization.arrayToDataTable(SIParray);
+            var options = {
+                //title: 'TRANSACTION MODE WISE SIP',
+                // colors: ['#5a1249', '#0a7148', '#f26b3e', '#81133b', '#0a6c70', '#00FFFF', '#66CDAA', '#5F9EA0', '#A9A9A9', '#BDB76B', '#2F4F4F', '#E9967A', '#F0E68C', '#F08080', '#6B8E23', '#708090'],
+                backgroundColor: 'transparent',
+                enableInteractivity: true,
+                is3D: true,
+                legend: { position: 'bottom', alignment: 'start' },
+
+            };
+            var chart = new google.visualization.PieChart(document.getElementById('SIPPIECHART'));
+            chart.draw(data, options);
+            //---end ofTRANSACTION MODE WISE SIP-------
+            //---TRANSACTION MODE WISE NONSIP-------
+            var datanonsip = google.visualization.arrayToDataTable(NONSIParray);
+            var optionsnonsip = {
+                //title: 'TRANSACTION MODE WISE NONSIP',
+                // colors: ['#5a1249', '#0a7148', '#f26b3e', '#81133b', '#0a6c70', '#00FFFF', '#66CDAA', '#5F9EA0', '#A9A9A9', '#BDB76B', '#2F4F4F', '#E9967A', '#F0E68C', '#F08080', '#6B8E23', '#708090'],
+                backgroundColor: 'transparent',
+                enableInteractivity: true,
+                is3D: true,
+                legend: { position: 'bottom', alignment: 'start' },
+
+            };
+            var chartnonsip = new google.visualization.PieChart(document.getElementById('NONSIPPIECHART'));
+            chartnonsip.draw(datanonsip, optionsnonsip);
+            //---end ofTRANSACTION MODE WISE NONSIP-------
+
+
+        });
+    }
+    function Postdoctype() {
+        debugger;
+        $('#maindiv').hide();
+        $('#allcleareddiv').show();
+        var linechart = [['TRANSACTIONTYPE', 'COUNT', 'AMOUNT']]
+        var SIParray = [['TRANSACTIONMODES', 'AMOUNT']]
+        var NONSIParray = [['TRANSACTIONMODES', 'AMOUNT']]
+        var physicalunit = [['unitstatus', 'unitcountdata']]
+        google.charts.load("current", { packages: ["corechart"] });
+        google.charts.setOnLoadCallback(drawChart);
+        function drawChart() {
+
+        }
+        google.charts.load("current", { packages: ["corechart"] });
+        google.charts.setOnLoadCallback(drawChart1);
+        function drawChart1() {
+
+        }
+        $('#loader').show().addClass("loader");
+        //   var currentfund = $('#ddlFund').val();
+        //------fund checking--
+        var currentfund = $('#ddlFund').val();
+        if (currentfund == "") {
+            $('#maindiv').hide();
+            alert('Please select fund to view the report');
+            $('#loader').hide();
+            return;
+        }
+        //---end of fund checking--
+        var Todate = $("#txtfromdate").val();
+        $("#txtfromdate").val(Todate);
+        $('#datechange').append(Todate);
+        $('#datechange1').append(Todate);
+        $('#datechange2').append(Todate);
+        $('#datechange3').append(Todate);
+        $('#datechange4').append(Todate);
+        var Flg = 0;
+        $.ajax({
+            url: "/Kloc/GetallBankingDashboarddata",
+            type: "POST",
+            cache: false,
+            datatype: JSON,
+            data: { Fromdate: Todate, Fund: currentfund, flg: Flg },
+            success: function (data) {
+                debugger;
+                var Table0 = $.parseJSON(data).Table;
+                var Table1 = $.parseJSON(data).Table1;
+                var Table2 = $.parseJSON(data).Table2;
+                var Table3 = $.parseJSON(data).Table3;
+                var Table4 = $.parseJSON(data).Table4;
+                var Table5 = $.parseJSON(data).Table5;
+                var Table6 = $.parseJSON(data).Table6;
+                var Table7 = $.parseJSON(data).Table7;
+                var Table8 = $.parseJSON(data).Table8;
+                var Table9 = $.parseJSON(data).Table9;
+                var Table10 = $.parseJSON(data).Table10;
+                var Table11 = $.parseJSON(data).Table11;
+                var Table12 = $.parseJSON(data).Table12;
+                //-----------SIP DATA ----------
+
+                $('#currentFundName').html($('#ddlFund option:selected').text());
+                //$('#divupto1weekcount').html(Table0[0].SIPDAYSDURATIONCOUNT);
+                //$('#divupto1weekamount').append('&#8377;' + parseFloat(Table0[0].SIPDAYSGROSSAMOUNTTOTAL).toFixed(2));
+                $('#upto1weeksipdiv').addClass('twoto3weekallcleared');
+                $('#upto1weeksipdivmsg').html('');
+                var upto1weeksipdata = Table0[0].SIPDAYSDURATIONCOUNT;
+                var upto1weeksipamount = Table0[0].SIPDAYSGROSSAMOUNTTOTAL;
+                if (upto1weeksipdata > 0 && upto1weeksipamount > 0) {
+
+                    $('#divupto1weekcount').html(Table0[0].SIPDAYSDURATIONCOUNT);
+                    var sipamountdecimalconversion = parseFloat(Table0[0].SIPDAYSGROSSAMOUNTTOTAL).toFixed(2);
+                    var commaseparatesipamountconversion = commaSeparateNumber(sipamountdecimalconversion);
+
+                    $('#divupto1weekamount').append('&#8377;' + commaseparatesipamountconversion);
+                }
+                else {
+                    $('#upto1weeksipdivmsg').html('All Cleared').addClass('allclear');
+
+                }
+                //------------
+                //$('#div1to2weekcount').html(Table0[1].SIPDAYSDURATIONCOUNT);
+                //$('#div1to2weekamount').append('&#8377;' + parseFloat(Table0[1].SIPDAYSGROSSAMOUNTTOTAL).toFixed(2));
+                $('#1to2weekssipdiv').addClass('twoto3weekallcleared');
+                $('#1to2weekssipdivmsg').html('');
+                var oneto2weekssipdata = Table0[1].SIPDAYSDURATIONCOUNT;
+                var oneto2weekssipamount = Table0[1].SIPDAYSGROSSAMOUNTTOTAL;
+                if (oneto2weekssipdata > 0 && oneto2weekssipamount > 0) {
+                    $('#div1to2weekcount').html(Table0[1].SIPDAYSDURATIONCOUNT);
+                    var sip1to2weekamountamountdecimalconversion = parseFloat(Table0[1].SIPDAYSGROSSAMOUNTTOTAL).toFixed(2);
+                    var commaseparatesip1to2weekamountconversion = commaSeparateNumber(sip1to2weekamountamountdecimalconversion);
+                    $('#div1to2weekamount').append('&#8377;' + commaseparatesip1to2weekamountconversion);
+                }
+                else {
+                    $('#1to2weekssipdivmsg').html('All Cleared').addClass('allclear');
+                }
+                $('#2to3weeks').removeClass('twoto3weekallcleared');
+                $('#2to3weeks').addClass('twoto3weekdefault');
+                $('#2to3weeksip').html('');
+                var two3weekdata = Table0[2].SIPDAYSDURATIONCOUNT;
+                var two3weeksamount = Table0[2].SIPDAYSGROSSAMOUNTTOTAL;
+                if (two3weekdata > 0 && two3weeksamount > 0) {
+                    $('#div2to3weekscount').html(Table0[2].SIPDAYSDURATIONCOUNT);
+                    var sip2to3weeksamountamountdecimalconversion = parseFloat(Table0[2].SIPDAYSGROSSAMOUNTTOTAL).toFixed(2);
+                    var commaseparatesip2to3weeksamountconversion = commaSeparateNumber(sip2to3weeksamountamountdecimalconversion);
+                    $('#div2to3weeksamount').append('&#8377;' + commaseparatesip2to3weeksamountconversion);
+                }
+                else {
+                    $('#2to3weeksip').html('All Cleared').addClass('allclear');
+                    $('#2to3weeks').addClass('twoto3weekallcleared');
+                }
+                //$('#div2to3weekscount').html(Table0[2].SIPDAYSDURATIONCOUNT);
+                //$('#div2to3weeksamount').append('&#8377;' + parseFloat(Table0[2].SIPDAYSGROSSAMOUNTTOTAL).toFixed(2));
+                $('#above3weeksdiv').removeClass('twoto3weekallcleared');
+                $('#above3weeksdiv').addClass('twoto3weekdefault');
+                $('#above3weeksmsg').html('');
+
+
+                var sipabove3weeksdata = Table0[3].SIPDAYSDURATIONCOUNT;
+                var sipabove3weeksamount = Table0[3].SIPDAYSGROSSAMOUNTTOTAL;
+                if (sipabove3weeksdata > 0 && sipabove3weeksamount > 0) {
+                    $('#divAbove3weekscount').html(Table0[3].SIPDAYSDURATIONCOUNT);
+                    var sipabove3weeksamountdecimalconversion = parseFloat(Table0[3].SIPDAYSGROSSAMOUNTTOTAL).toFixed(2);
+                    var commaseparatesipbove3weeksamountconversion = commaSeparateNumber(sipabove3weeksamountdecimalconversion);
+                    $('#divAbove3weeksamount').append('&#8377;' + commaseparatesipbove3weeksamountconversion);
+
+                }
+                else {
+                    $('#above3weeksmsg').html('All Cleared').addClass('allclear');
+                    $('#above3weeksdiv').addClass('twoto3weekallcleared');
+
+                }
+                //$('#divAbove3weekscount').html(Table0[3].SIPDAYSDURATIONCOUNT);
+                //$('#divAbove3weeksamount').append('&#8377;' + parseFloat(Table0[3].SIPDAYSGROSSAMOUNTTOTAL).toFixed(2));
+
+                //$('#divGrandTotalcount').html(Table0[4].SIPDAYSDURATIONCOUNT);
+                //$('#divGrandTotalamount').append('&#8377;' + parseFloat(Table0[4].SIPDAYSGROSSAMOUNTTOTAL).toFixed(2));
+                $('#sipgrandtotaldivmsg').html('');
+                $('#sipgrandtotaldiv').addClass('grandtotal-allcleared');
+                var sipgrandtotalcount = Table0[4].SIPDAYSDURATIONCOUNT;
+                var sipgarandtotalamount = Table0[4].SIPDAYSGROSSAMOUNTTOTAL;
+                if (sipgrandtotalcount > 0 && sipgarandtotalamount > 0) {
+                    $('#divGrandTotalcount').html(Table0[4].SIPDAYSDURATIONCOUNT);
+                    var sipGrandTotalamountdecimalconversion = parseFloat(Table0[4].SIPDAYSGROSSAMOUNTTOTAL).toFixed(2);
+                    var commaseparatesipgrandamountconversion = commaSeparateNumber(sipGrandTotalamountdecimalconversion);
+                    $('#divGrandTotalamount').append('&#8377;' + commaseparatesipgrandamountconversion);
+                }
+                else {
+                    $('#sipgrandtotaldivmsg').html('All Cleared').addClass('allclear');
+
+                }
+
+                //-----------END OF SIP DATA----
+                //-----------NON SIP DATA ----------
+
+                //$('#NONdivupto1weekcount').html(Table1[0].NONSIPDAYSDURATIONCOUNT);
+                //$('#NONdivupto1weekamount').append('&#8377;' + parseFloat(Table1[0].NONSIPDAYSGROSSAMOUNTTOTAL).toFixed(2));
+
+                //$('#NONdiv1to2weekcount').html(Table1[1].NONSIPDAYSDURATIONCOUNT);
+                //$('#NONdiv1to2weekamount').append('&#8377;' + parseFloat(Table1[1].NONSIPDAYSGROSSAMOUNTTOTAL).toFixed(2));
+                $('#upto1weeknonsipdiv').addClass('twoto3weekallcleared');
+                $('#upto1weeknonsipdivmsg').html('');
+                var upto1weeknonsipdata = Table1[0].NONSIPDAYSDURATIONCOUNT;
+                var upto1weeknonsipamount = Table1[0].NONSIPDAYSGROSSAMOUNTTOTAL;
+                if (upto1weeknonsipdata > 0 && upto1weeknonsipamount > 0) {
+
+                    $('#NONdivupto1weekcount').html(Table1[0].NONSIPDAYSDURATIONCOUNT);
+                    var nonsip1weekamountdecimalconversion = parseFloat(Table1[0].NONSIPDAYSGROSSAMOUNTTOTAL).toFixed(2);
+                    var commaseparatenonsip1weekamountconversion = commaSeparateNumber(nonsip1weekamountdecimalconversion);
+                    $('#NONdivupto1weekamount').append('&#8377;' + commaseparatenonsip1weekamountconversion);
+                }
+                else {
+                    $('#upto1weeknonsipdivmsg').html('All Cleared').addClass('allclear');
+
+                }
+
+                $('#1to2weeksnonsipdiv').addClass('twoto3weekallcleared');
+                $('#1to2weeksnonsipdivmsg').html('');
+                var oneto2weeksnonsipdata = Table1[1].NONSIPDAYSDURATIONCOUNT;
+                var oneto2weeksnonsipamount = Table1[1].NONSIPDAYSGROSSAMOUNTTOTAL;
+                if (oneto2weeksnonsipdata > 0 && oneto2weeksnonsipamount > 0) {
+                    $('#NONdiv1to2weekcount').html(Table1[1].NONSIPDAYSDURATIONCOUNT);
+                    var nonsip1to2weekamountdecimalconversion = parseFloat(Table1[1].NONSIPDAYSGROSSAMOUNTTOTAL).toFixed(2);
+                    var commaseparatenonsip1to2weekamountconversion = commaSeparateNumber(nonsip1to2weekamountdecimalconversion);
+                    $('#NONdiv1to2weekamount').append('&#8377;' + commaseparatenonsip1to2weekamountconversion);
+                }
+                else {
+                    $('#1to2weeksnonsipdivmsg').html('All Cleared').addClass('allclear');
+                }
+                //$('#NONdiv2to3weekscount').html(Table1[2].NONSIPDAYSDURATIONCOUNT);
+                //$('#NONdiv2to3weeksamount').append('&#8377;' + parseFloat(Table1[2].NONSIPDAYSGROSSAMOUNTTOTAL).toFixed(2));
+                $('#2to3weeks1').removeClass('twoto3weekallcleared');
+                $('#2to3weeks1').addClass('twoto3weekdefault');
+                $('#2to3weeksip1').html('');
+                var two3weekdata1 = Table1[2].NONSIPDAYSDURATIONCOUNT;
+                var two3weeksamount1 = Table1[2].NONSIPDAYSGROSSAMOUNTTOTAL;
+                if (two3weekdata1 > 0 && two3weeksamount1 > 0) {
+                    $('#NONdiv2to3weekscount').html(Table1[2].NONSIPDAYSDURATIONCOUNT);
+                    var nonsip2to3weekamountdecimalconversion = parseFloat(Table1[2].NONSIPDAYSGROSSAMOUNTTOTAL).toFixed(2);
+                    var commaseparatenonsip2to3weekamountconversion = commaSeparateNumber(nonsip2to3weekamountdecimalconversion);
+                    $('#NONdiv2to3weeksamount').append('&#8377;' + commaseparatenonsip2to3weekamountconversion);
+
+                }
+                else {
+                    $('#2to3weeksip1').html('All Cleared').addClass('allclear');
+                    $('#2to3weeks1').addClass('twoto3weekallcleared');
+                }
+
+                //$('#NONdivAbove3weekscount').html(Table1[3].NONSIPDAYSDURATIONCOUNT);
+                //$('#NONdivAbove3weeksamount').append('&#8377;' + parseFloat(Table1[3].NONSIPDAYSGROSSAMOUNTTOTAL).toFixed(2));
+                $('#above3weeksdiv1').removeClass('twoto3weekallcleared');
+                $('#above3weeksdiv1').addClass('twoto3weekdefault');
+                $('#above3weeksmsg1').html('');
+
+                var sipabove3weeksdata1 = Table1[3].NONSIPDAYSDURATIONCOUNT;
+                var sipabove3weeksamount1 = Table1[3].NONSIPDAYSGROSSAMOUNTTOTAL;
+                if (sipabove3weeksdata1 > 0 && sipabove3weeksamount1 > 0) {
+                    $('#NONdivAbove3weekscount').html(Table1[3].NONSIPDAYSDURATIONCOUNT);
+                    var nonsipAbove3weekamountdecimalconversion = parseFloat(Table1[3].NONSIPDAYSGROSSAMOUNTTOTAL).toFixed(2);
+                    var commaseparatenonsipAbove3weekamountconversion = commaSeparateNumber(nonsipAbove3weekamountdecimalconversion);
+                    $('#NONdivAbove3weeksamount').append('&#8377;' + commaseparatenonsipAbove3weekamountconversion);
+
+                }
+                else {
+                    $('#above3weeksmsg1').html('All Cleared').addClass('allclear');
+                    $('#above3weeksdiv1').addClass('twoto3weekallcleared');
+
+                }
+
+                //$('#NONdivGrandTotalcount').html(Table1[4].NONSIPDAYSDURATIONCOUNT);
+                //$('#NONdivGrandTotalamount').append('&#8377;' + parseFloat(Table1[4].NONSIPDAYSGROSSAMOUNTTOTAL).toFixed(2));
+                $('#nonsipgrandtotaldivmsg').html('');
+                $('#nonsipgrandtotaldiv').addClass('grandtotal-allcleared');
+                var nonsipgrandtotalcount = Table1[4].NONSIPDAYSDURATIONCOUNT;
+                var nonsipgarandtotalamount = Table1[4].NONSIPDAYSGROSSAMOUNTTOTAL;
+                if (nonsipgrandtotalcount > 0 && nonsipgarandtotalamount > 0) {
+                    $('#NONdivGrandTotalcount').html(Table1[4].NONSIPDAYSDURATIONCOUNT);
+                    var nonsipgrandtotalamountdecimalconversion = parseFloat(Table1[4].NONSIPDAYSGROSSAMOUNTTOTAL).toFixed(2);
+                    var commaseparatenonsipgrandtotalamountconversion = commaSeparateNumber(nonsipgrandtotalamountdecimalconversion);
+                    $('#NONdivGrandTotalamount').append('&#8377;' + commaseparatenonsipgrandtotalamountconversion);
+                }
+                else {
+                    $('#nonsipgrandtotaldivmsg').html('All Cleared').addClass('allclear');
+
+                }
+
+                if ((sipgrandtotalcount > 0 && sipgarandtotalamount > 0) || (nonsipgrandtotalcount > 0 && nonsipgarandtotalamount > 0)) {
+                    $('#allcleareddiv').show();
+                }
+                else {
+                    $('#loader').hide();
+                    $('#maindiv').show();
+                    $('#allcleareddiv').hide();
+                    return;
+                }
+                //-----------END OF NON SIP DATA----
+
+                ////------------------------------
+                var rows = Table2;
+                var j = 1;
+                if (rows != null && rows != "") {
+                    var rowcnt = rows.length - 1;
+                    for (var i = 0; i <= rowcnt; i++) {
+                        linechart[j] = [rows[i].TRANSACTIONTYPE, rows[i].COUNT, rows[i].AMOUNT];
+                        j = j + 1;
+                    }
+                }
+                //---------------------------------
+                ////------------------------------
+                var rowsip = Table3;
+                var S = 1;
+                if (rowsip != null && rowsip != "") {
+                    var rowcntsip = rowsip.length - 1;
+                    for (var i = 0; i <= rowcntsip; i++) {
+                        SIParray[S] = [rowsip[i].TRANSACTIONMODES, rowsip[i].AMOUNT];
+                        S = S + 1;
+                    }
+                }
+                //---------------------------------
+                ////------------------------------
+                var rownonsip = Table4;
+                var NS = 1;
+
+                if (rownonsip != null && rownonsip != "") {
+                    var rowcntnonsip = rownonsip.length - 1;
+                    for (var i = 0; i <= rowcntnonsip; i++) {
+                        NONSIParray[NS] = [rownonsip[i].TRANSACTIONMODES, rownonsip[i].AMOUNT];
+                        NS = NS + 1;
+                    }
+                }
+                //--------------------------------
+
+                ////----------table data------
+
+                $('#tabledata').html("");
+
+                var rowst = Table5;
+                if (rowst != null && rowst != "") {
+                    var rowcntt = rowst.length - 1;
+                    var i = 0;
+                    var st = '';
+                    st += '<table class="bankingdata">';
+                    st += '<tbody>';
+                    st += '<th>Ageing</th>';
+                    st += '<th>SIP Count</th>';
+                    st += '<th>SIP Amount</th>';
+                    st += '<th>Non-SIP Count</th>';
+                    st += '<th>Non-SIP Amount</th>';
+                    st += '<th>Grand Total Count</th>';
+                    st += '<th>Grand Total Amount</th>';
+
+                    for (i ; i <= rowcntt; i++) {
+
+                        //if (rows[i].fund_code != null && rows[i].fund_code != "") {
+                        st += '<tr>';
+                        st += '<td class="bd tablewidth1">' + rowst[i].Ageing + '</td>';
+                        st += '<td class="bd">' + rowst[i].sipcount + '</td>';
+                        var sipamountdecimalconversion = parseFloat(rowst[i].sipamount).toFixed(2);
+                        var commaseparatesipamountconversion = commaSeparateNumber(sipamountdecimalconversion);
+                        st += '<td class="bd">' + '&#8377;' + commaseparatesipamountconversion + '</td>';
+                        st += '<td class="bd">' + rowst[i].nonsipcount + '</td>';
+                        var nonsipamountdecimalconversion = parseFloat(rowst[i].nonsipamount).toFixed(2);
+                        var commaseparatenonsipamountconversion = commaSeparateNumber(nonsipamountdecimalconversion);
+                        st += '<td class="bd">' + '&#8377;' + commaseparatenonsipamountconversion + '</td>';
+                        st += '<td class="bd">' + rowst[i].gtcount + '</td>';
+                        var gtamountdecimalconversion = parseFloat(rowst[i].gtamount).toFixed(2);
+                        var commaseparategtamountconversion = commaSeparateNumber(gtamountdecimalconversion);
+                        st += '<td class="bd">' + '&#8377;' + commaseparategtamountconversion + '</td>';
+                        st += '</tr>';
+                    }
+                    st += '</tbody>';
+                    st += '</table>';
+                    $('#tabledata').append(st);
+
+                }
+                ////------------------------------
+                //////----------table data1------
+
+
+                $('#tabledatasipmode').html("");
+                var rowssip = Table6;
+                var rowssipgt = Table7;
+                if (rowssip != null && rowssip != "") {
+                    var rowcntsip = rowssip.length - 1;
+                    var lengthofrowssipgt = rowssipgt.length;
+                    var i = 0;
+                    var st = '';
+                    st += '<table class="bankingdata">';
+                    st += '<tbody>';
+                    st += '<th>Type</th>';
+                    st += '<th style="width:10%">1 Week Count</th>';
+                    st += '<th style="width:10%">1 Week Amount</th>';
+                    st += '<th style="width:10%">1-2 Weeks Count</th>';
+                    st += '<th style="width:10%">1-2 Weeks Amount</th>';
+                    st += '<th style="width:10%">2-3 Weeks Count</th>';
+                    st += '<th style="width:10%">2-3 Weeks Amount</th>';
+                    st += '<th style="width:10%">>3 Weeks Count</th>';
+                    st += '<th style="width:10%">>3 Weeks Amount</th>';
+                    st += '<th style="width:10%">Gr.Total Count</th>';
+                    st += '<th style="width:10%">Gr.Total Amount</th>';
+                    for (i ; i <= rowcntsip; i++) {
+
+                        //if (rows[i].fund_code != null && rows[i].fund_code != "") {
+                        st += '<tr>';
+                        st += '<td class="bd1 tablewidth">' + rowssip[i].Type + '</td>';
+                        st += '<td class="bd1">' + rowssip[i].oneweekcount + '</td>';
+                        var oneweekamountdecimalconversion = parseFloat(rowssip[i].oneweekamount).toFixed(2);
+                        var commaseparateoneweekamountconversion = commaSeparateNumber(oneweekamountdecimalconversion);
+                        st += '<td class="bd1">' + '&#8377;' + commaseparateoneweekamountconversion + '</td>';
+                        st += '<td class="bd1">' + rowssip[i].oneto2weekcount + '</td>';
+                        var oneto2weekamountdecimalconversion = parseFloat(rowssip[i].oneto2weekamount).toFixed(2);
+                        var commaseparateoneto2weekamountconversion = commaSeparateNumber(oneto2weekamountdecimalconversion);
+                        st += '<td class="bd1">' + '&#8377;' + commaseparateoneto2weekamountconversion + '</td>';
+                        st += '<td class="bd1">' + rowssip[i].twoto3weekcount + '</td>';
+                        var twoto3weekamountdecimalconversion = parseFloat(rowssip[i].twoto3weekamount).toFixed(2);
+                        var commaseparatetwoto3weekamountconversion = commaSeparateNumber(twoto3weekamountdecimalconversion);
+                        st += '<td class="bd1">' + '&#8377;' + commaseparatetwoto3weekamountconversion + '</td>';
+                        st += '<td class="bd1">' + rowssip[i].above3weekscount + '</td>';
+                        var above3weeksamountdecimalconversion = parseFloat(rowssip[i].above3weeksamount).toFixed(2);
+                        var commaseparateabove3weeksamountconversion = commaSeparateNumber(above3weeksamountdecimalconversion);
+                        st += '<td class="bd1">' + '&#8377;' + commaseparateabove3weeksamountconversion + '</td>';
+                        st += '<td class="bd1">' + rowssip[i].grandtotalcount + '</td>';
+                        var above3weeksamountdecimalconversion = parseFloat(rowssip[i].grandtotalamount).toFixed(2);
+                        var commaseparateabove3weeksamountconversion = commaSeparateNumber(above3weeksamountdecimalconversion);
+                        st += '<td class="bd1">' + '&#8377;' + commaseparateabove3weeksamountconversion + '</td>';
+                        st += '</tr>';
+
+                    }
+                    if (lengthofrowssipgt != 0 && lengthofrowssipgt != null && lengthofrowssipgt != "") {
+                        st += '<tr>';
+                        st += '<td class="bd1 tablewidth">' + rowssipgt[0].Type + '</td>';
+                        st += '<td class="bd1">' + rowssipgt[0].oneweekcount + '</td>';
+                        var oneweekamountdecimalconversion = parseFloat(rowssipgt[0].oneweekamount).toFixed(2);
+                        var commaseparateoneweekamountconversion = commaSeparateNumber(oneweekamountdecimalconversion);
+                        st += '<td class="bd1">' + '&#8377;' + commaseparateoneweekamountconversion + '</td>';
+                        st += '<td class="bd1">' + rowssipgt[0].oneto2weekcount + '</td>';
+                        var oneto2weekamountdecimalconversion = parseFloat(rowssipgt[0].oneto2weekamount).toFixed(2);
+                        var commaseparateoneto2weekamountconversion = commaSeparateNumber(oneto2weekamountdecimalconversion);
+                        st += '<td class="bd1">' + '&#8377;' + commaseparateoneto2weekamountconversion + '</td>';
+                        st += '<td class="bd1">' + rowssipgt[0].twoto3weekcount + '</td>';
+                        var twoto3weekamountdecimalconversion = parseFloat(rowssipgt[0].twoto3weekamount).toFixed(2);
+                        var commaseparatetwoto3weekamountconversion = commaSeparateNumber(twoto3weekamountdecimalconversion);
+                        st += '<td class="bd1">' + '&#8377;' + commaseparatetwoto3weekamountconversion + '</td>';
+                        st += '<td class="bd1">' + rowssipgt[0].above3weekscount + '</td>';
+                        var above3weeksamountdecimalconversion = parseFloat(rowssipgt[0].above3weeksamount).toFixed(2);
+                        var commaseparateabove3weeksamountconversion = commaSeparateNumber(above3weeksamountdecimalconversion);
+                        st += '<td class="bd1">' + '&#8377;' + commaseparateabove3weeksamountconversion + '</td>';
+                        st += '<td class="bd1">' + rowssipgt[0].grandtotalcount + '</td>';
+                        var gtdecimalconversion = parseFloat(rowssipgt[0].grandtotalamount).toFixed(2);
+                        var commaseparategtconversion = commaSeparateNumber(gtdecimalconversion);
+                        st += '<td class="bd1">' + '&#8377;' + commaseparategtconversion + '</td>';
+                        st += '</tr>';
+                    }
+                    st += '</tbody>';
+                    st += '</table>';
+
+                    $('#tabledatasipmode').append(st);
+
+                }
+                //////------------------------------
+                //////----------table data2------
+
+
+                $('#tabledatanonsipmode').html("");
+
+                var rowsnonsip = Table8;
+                var rowsnonsipgt = Table9;
+                var rowsgt = Table10
+                if (rowsnonsip != null && rowsnonsip != "") {
+                    var rowcntnonsip = rowsnonsip.length - 1;
+                    var lengthofrowsnonsipgt = rowsnonsipgt.length;
+                    var i = 0;
+                    var st = '';
+                    st += '<table class="bankingdata">';
+                    st += '<tbody>';
+                    st += '<th>Type</th>';
+                    st += '<th style="width:10%">1 Week Count</th>';
+                    st += '<th style="width:10%">1 Week Amount</th>';
+                    st += '<th style="width:10%">1-2 Weeks Count</th>';
+                    st += '<th style="width:10%">1-2 Weeks Amount</th>';
+                    st += '<th style="width:10%">2-3 Weeks Count</th>';
+                    st += '<th style="width:10%">2-3 Weeks Amount</th>';
+                    st += '<th style="width:10%">>3 Weeks Count</th>';
+                    st += '<th style="width:10%">>3 Weeks Amount</th>';
+                    st += '<th style="width:10%">Gr.Total Count</th>';
+                    st += '<th style="width:10%">Gr.Total Amount</th>';
+
+                    for (i ; i <= rowcntnonsip; i++) {
+                        //if (rows[i].fund_code != null && rows[i].fund_code != "") {
+                        st += '<tr>';
+                        st += '<td class="bd4 tablewidth">' + rowsnonsip[i].Type + '</td>';
+                        st += '<td class="bd4">' + rowsnonsip[i].oneweekcount + '</td>';
+                        var oneweekamountdecimalconversion = parseFloat(rowsnonsip[i].oneweekamount).toFixed(2);
+                        var commaseparateoneweekamountconversion = commaSeparateNumber(oneweekamountdecimalconversion);
+                        st += '<td class="bd4">' + '&#8377;' + commaseparateoneweekamountconversion + '</td>';
+                        st += '<td class="bd4">' + rowsnonsip[i].oneto2weekcount + '</td>';
+                        var oneto2weekamountdecimalconversion = parseFloat(rowsnonsip[i].oneto2weekamount).toFixed(2);
+                        var commaseparateoneto2weekamountconversion = commaSeparateNumber(oneto2weekamountdecimalconversion);
+                        st += '<td class="bd4">' + '&#8377;' + commaseparateoneto2weekamountconversion + '</td>';
+                        st += '<td class="bd4">' + rowsnonsip[i].twoto3weekcount + '</td>';
+                        var twoto3weekamountdecimalconversion = parseFloat(rowsnonsip[i].twoto3weekamount).toFixed(2);
+                        var commaseparatetwoto3weekamountconversion = commaSeparateNumber(twoto3weekamountdecimalconversion);
+                        st += '<td class="bd4">' + '&#8377;' + commaseparatetwoto3weekamountconversion + '</td>';
+                        st += '<td class="bd4">' + rowsnonsip[i].above3weekscount + '</td>';
+                        var above3weeksamountdecimalconversion = parseFloat(rowsnonsip[i].above3weeksamount).toFixed(2);
+                        var commaseparateabove3weeksamountconversion = commaSeparateNumber(above3weeksamountdecimalconversion);
+                        st += '<td class="bd4">' + '&#8377;' + commaseparateabove3weeksamountconversion + '</td>';
+                        st += '<td class="bd4">' + rowsnonsip[i].grandtotalcount + '</td>';
+                        var grandtotalamountdecimalconversion = parseFloat(rowsnonsip[i].grandtotalamount).toFixed(2);
+                        var commaseparategrandtotalamountconversion = commaSeparateNumber(grandtotalamountdecimalconversion);
+                        st += '<td class="bd4">' + '&#8377;' + commaseparategrandtotalamountconversion + '</td>';
+                        st += '</tr>';
+
+                    }
+                    if (lengthofrowsnonsipgt != 0 && lengthofrowsnonsipgt != null && lengthofrowsnonsipgt != "") {
+                        st += '<tr>';
+                        st += '<td class="bd4 tablewidth">' + rowsnonsipgt[0].Type + '</td>';
+                        st += '<td class="bd4">' + rowsnonsipgt[0].oneweekcount + '</td>';
+                        var oneweekamountdecimalconversion = parseFloat(rowsnonsipgt[0].oneweekamount).toFixed(2);
+                        var commaseparateoneweekamountconversion = commaSeparateNumber(oneweekamountdecimalconversion);
+                        st += '<td class="bd4">' + '&#8377;' + commaseparateoneweekamountconversion + '</td>';
+                        st += '<td class="bd4">' + rowsnonsipgt[0].oneto2weekcount + '</td>';
+                        var oneto2weekamountdecimalconversion = parseFloat(rowsnonsipgt[0].oneto2weekamount).toFixed(2);
+                        var commaseparateoneto2weekamountconversion = commaSeparateNumber(oneto2weekamountdecimalconversion);
+                        st += '<td class="bd4">' + '&#8377;' + commaseparateoneto2weekamountconversion + '</td>';
+                        st += '<td class="bd4">' + rowsnonsipgt[0].twoto3weekcount + '</td>';
+                        var twoto3weekamountdecimalconversion = parseFloat(rowsnonsipgt[0].twoto3weekamount).toFixed(2);
+                        var commaseparatetwoto3weekamountconversion = commaSeparateNumber(twoto3weekamountdecimalconversion);
+                        st += '<td class="bd4">' + '&#8377;' + commaseparatetwoto3weekamountconversion + '</td>';
+                        st += '<td class="bd4">' + rowsnonsipgt[0].above3weekscount + '</td>';
+                        var above3weeksamountdecimalconversion = parseFloat(rowsnonsipgt[0].above3weeksamount).toFixed(2);
+                        var commaseparateabove3weeksamountconversion = commaSeparateNumber(above3weeksamountdecimalconversion);
+                        st += '<td class="bd4">' + '&#8377;' + commaseparateabove3weeksamountconversion + '</td>';
+                        st += '<td class="bd4">' + rowsnonsipgt[0].grandtotalcount + '</td>';
+                        var grandtotalamountdecimalconversion = parseFloat(rowsnonsipgt[0].grandtotalamount).toFixed(2);
+                        var commaseparategrandtotalamountconversion = commaSeparateNumber(grandtotalamountdecimalconversion);
+                        st += '<td class="bd4">' + '&#8377;' + commaseparategrandtotalamountconversion + '</td>';
+                        st += '</tr>';
+                    }
+                    st += '</tbody>';
+                    st += '</table>';
+                    $('#tabledatanonsipmode').append(st);
+
+                }
+                //////------------------------------
+                //////----------table data10------
+
+
+                $('#sipnonsipgrandtotal').html("");
+
+
+                var rowsgt = Table10
+                if (rowsgt != null && rowsgt != "") {
+                    var rowcntnonsipgt = rowsgt.length - 1;
+                    var i = 0;
+                    var st = '';
+                    st += '<table class="bankingdata">';
+                    st += '<tbody>';
+                    st += '<th style="width:10%">Type</th>';
+                    st += '<th style="width:10%">1 Week Count</th>';
+                    st += '<th style="width:10%">1 Week Amount</th>';
+                    st += '<th style="width:10%">1-2 Weeks Count</th>';
+                    st += '<th style="width:10%">1-2 Weeks Amount</th>';
+                    st += '<th style="width:10%">2-3 Weeks Count</th>';
+                    st += '<th style="width:10%">2-3 Weeks Amount</th>';
+                    st += '<th style="width:10%">>3 Weeks Count</th>';
+                    st += '<th style="width:10%">>3 Weeks Amount</th>';
+                    st += '<th style="width:10%">Gr.Total Count</th>';
+                    st += '<th style="width:10%">Gr.Total Amount</th>';
+
+                    for (i ; i <= rowcntnonsipgt; i++) {
+                        st += '<tr>';
+                        st += '<td class="bd5 tablewidth">' + rowsgt[i].Type + '</td>';
+                        st += '<td class="bd5">' + rowsgt[i].oneweekcount + '</td>';
+                        var oneweekamountdecimalconversion = parseFloat(rowsgt[i].oneweekamount).toFixed(2);
+                        var commaseparateoneweekamountconversion = commaSeparateNumber(oneweekamountdecimalconversion);
+                        st += '<td class="bd5">' + '&#8377;' + commaseparateoneweekamountconversion + '</td>';
+                        st += '<td class="bd5">' + rowsgt[i].oneto2weekcount + '</td>';
+                        var oneto2weekamountdecimalconversion = parseFloat(rowsgt[i].oneto2weekamount).toFixed(2);
+                        var commaseparateoneto2weekamountconversion = commaSeparateNumber(oneto2weekamountdecimalconversion);
+                        st += '<td class="bd5">' + '&#8377;' + commaseparateoneto2weekamountconversion + '</td>';
+                        st += '<td class="bd5">' + rowsgt[i].twoto3weekcount + '</td>';
+                        var twoto3weekamountdecimalconversion = parseFloat(rowsgt[i].twoto3weekamount).toFixed(2);
+                        var commaseparatetwoto3weekamountconversion = commaSeparateNumber(twoto3weekamountdecimalconversion);
+                        st += '<td class="bd5">' + '&#8377;' + commaseparatetwoto3weekamountconversion + '</td>';
+                        st += '<td class="bd5">' + rowsgt[i].above3weekscount + '</td>';
+                        var above3weeksamountdecimalconversion = parseFloat(rowsgt[i].above3weeksamount).toFixed(2);
+                        var commaseparateabove3weeksamountconversion = commaSeparateNumber(above3weeksamountdecimalconversion);
+                        st += '<td class="bd5">' + '&#8377;' + commaseparateabove3weeksamountconversion + '</td>';
+                        st += '<td class="bd5">' + rowsgt[i].grandtotalcount + '</td>';
+                        var grandtotalamountdecimalconversion = parseFloat(rowsgt[i].grandtotalamount).toFixed(2);
+                        var commaseparategrandtotalamountconversion = commaSeparateNumber(grandtotalamountdecimalconversion);
+                        st += '<td class="bd5">' + '&#8377;' + commaseparategrandtotalamountconversion + '</td>';
+                        st += '</tr>';
+
+                    }
+
+                    st += '</tbody>';
+                    st += '</table>';
+                    $('#sipnonsipgrandtotal').append(st);
+
+                }
+                //////----------table data5------
+
+
+                $('#tabledatascheme').html("");
+
+                var rowsscheme = Table11;
+                var rowsschemegt = Table12;
+                if (rowsscheme != null && rowsscheme != "") {
+                    var rowcntscheme = rowsscheme.length - 1;
+                    var lengthofrowsschemegt = rowsschemegt.length
+                    var i = 0;
+                    var st = '';
+                    st += '<table class="bankingdata">';
+                    st += '<tbody>';
+                    st += '<tr>';
+                    st += '<th>Type</th>';
+                    st += '<th style="width:10%">1 Week Count</th>';
+                    st += '<th style="width:10%">1 Week Amount</th>';
+                    st += '<th style="width:10%">1-2 Weeks Count</th>';
+                    st += '<th style="width:10%">1-2 Weeks Amount</th>';
+                    st += '<th style="width:10%">2-3 Weeks Count</th>';
+                    st += '<th style="width:10%">2-3 Weeks Amount</th>';
+                    st += '<th style="width:10%">>3 Weeks Count</th>';
+                    st += '<th style="width:10%">>3 Weeks Amount</th>';
+                    st += '<th style="width:10%">Gr.Total Count</th>';
+                    st += '<th style="width:10%">Gr.Total Amount</th>';
+                    st += '<tr>';
+
+                    for (i ; i <= rowcntscheme; i++) {
+
+                        //if (rows[i].fund_code != null && rows[i].fund_code != "") {
+                        st += '<tr>';
+                        st += '<td class="bd3 tablewidth">' + rowsscheme[i].CHRSCHEME + '</td>';
+                        st += '<td class="bd3">' + rowsscheme[i].oneweekcount + '</td>';
+                        var oneweekamountdecimalconversion = parseFloat(rowsscheme[i].oneweekamount).toFixed(2);
+                        var commaseparateoneweekamountconversion = commaSeparateNumber(oneweekamountdecimalconversion);
+                        st += '<td class="bd3">' + '&#8377;' + commaseparateoneweekamountconversion + '</td>';
+                        st += '<td class="bd3">' + rowsscheme[i].oneto2weekcount + '</td>';
+                        var oneto2weekamountdecimalconversion = parseFloat(rowsscheme[i].oneto2weekamount).toFixed(2);
+                        var commaseparateoneto2weekamountconversion = commaSeparateNumber(oneto2weekamountdecimalconversion);
+                        st += '<td class="bd3">' + '&#8377;' + commaseparateoneto2weekamountconversion + '</td>';
+                        st += '<td class="bd3">' + rowsscheme[i].twoto3weekcount + '</td>';
+                        var twoto3weekamountdecimalconversion = parseFloat(rowsscheme[i].twoto3weekamount).toFixed(2);
+                        var commaseparatetwoto3weekamountconversion = commaSeparateNumber(twoto3weekamountdecimalconversion);
+                        st += '<td class="bd3">' + '&#8377;' + commaseparatetwoto3weekamountconversion + '</td>';
+                        st += '<td class="bd3">' + rowsscheme[i].above3weekscount + '</td>';
+                        var above3weeksamountdecimalconversion = parseFloat(rowsscheme[i].above3weeksamount).toFixed(2);
+                        var commaseparateabove3weeksamountconversion = commaSeparateNumber(above3weeksamountdecimalconversion);
+                        st += '<td class="bd3">' + '&#8377;' + commaseparateabove3weeksamountconversion + '</td>';
+                        st += '<td class="bd3">' + rowsscheme[i].grandtotalcount + '</td>';
+                        var grandtotalamountdecimalconversion = parseFloat(rowsscheme[i].grandtotalamount).toFixed(2);
+                        var commaseparategrandtotalamountconversion = commaSeparateNumber(grandtotalamountdecimalconversion);
+                        st += '<td class="bd3">' + '&#8377;' + commaseparategrandtotalamountconversion + '</td>';
+                        st += '</tr>';
+
+                    }
+                    if (lengthofrowsschemegt != 0 && lengthofrowsschemegt != null && lengthofrowsschemegt != "") {
+                        st += '<tr>';
+                        st += '<td class="bd3 tablewidth">' + rowsschemegt[0].CHRSCHEME + '</td>';
+                        st += '<td class="bd3">' + rowsschemegt[0].oneweekcount + '</td>';
+                        var oneweekamountdecimalconversion = parseFloat(rowsschemegt[0].oneweekamount).toFixed(2);
+                        var commaseparateoneweekamountconversion = commaSeparateNumber(oneweekamountdecimalconversion);
+                        st += '<td class="bd3">' + '&#8377;' + commaseparateoneweekamountconversion + '</td>';
+                        st += '<td class="bd3">' + rowsschemegt[0].oneto2weekcount + '</td>';
+                        var oneto2weekamountdecimalconversion = parseFloat(rowsschemegt[0].oneto2weekamount).toFixed(2);
+                        var commaseparateoneto2weekamountconversion = commaSeparateNumber(oneto2weekamountdecimalconversion);
+                        st += '<td class="bd3">' + '&#8377;' + commaseparateoneto2weekamountconversion + '</td>';
+                        st += '<td class="bd3">' + rowsschemegt[0].twoto3weekcount + '</td>';
+                        var twoto3weekamountdecimalconversion = parseFloat(rowsschemegt[0].twoto3weekamount).toFixed(2);
+                        var commaseparatetwoto3weekamountconversion = commaSeparateNumber(twoto3weekamountdecimalconversion);
+                        st += '<td class="bd3">' + '&#8377;' + commaseparatetwoto3weekamountconversion + '</td>';
+                        st += '<td class="bd3">' + rowsschemegt[0].above3weekscount + '</td>';
+                        var above3weeksamountdecimalconversion = parseFloat(rowsschemegt[0].above3weeksamount).toFixed(2);
+                        var commaseparateabove3weeksamountconversion = commaSeparateNumber(above3weeksamountdecimalconversion);
+                        st += '<td class="bd3">' + '&#8377;' + commaseparateabove3weeksamountconversion + '</td>';
+                        st += '<td class="bd3">' + rowsschemegt[0].grandtotalcount + '</td>';
+                        var grandtotalamountdecimalconversion = parseFloat(rowsschemegt[0].grandtotalamount).toFixed(2);
+                        var commaseparategrandtotalamountconversion = commaSeparateNumber(grandtotalamountdecimalconversion);
+                        st += '<td class="bd3">' + '&#8377;' + commaseparategrandtotalamountconversion + '</td>';
+                        st += '</tr>';
+                    }
+                    st += '</tbody>';
+                    st += '</table>';
+                    $('#tabledatascheme').append(st);
+
+                }
+                //////------------------------------
+                $('#maindiv').show();
+                $('#loader').hide();
+            }
+        }).done(function () {
+            //------------line chart------------
+
+            google.charts.setOnLoadCallback(columnchart);
+            function columnchart() {
+                var datar = google.visualization.arrayToDataTable(linechart);
+
+                var view = new google.visualization.DataView(datar);
+
+                view.setColumns([0, //The "descr column"
+                1, //Downlink column
+                {
+                    calc: "stringify",
+                    sourceColumn: 1, // Create an annotation column with source column "1"
+                    type: "string",
+                    role: "annotation"
+                },
+                2, // Uplink column
+                {
+                    calc: "stringify",
+                    sourceColumn: 2, // Create an annotation column with source column "2"
+                    type: "string",
+                    role: "annotation"
+                }]);
+
+                var columnWrapper = new google.visualization.ChartWrapper({
+                    chartType: 'ColumnChart',
+                    containerId: 'LINECHART',
+                    legend: { position: 'bottom', alignment: 'start' },
+                    dataTable: view
+                });
+
+                columnWrapper.draw();
+            }
+            //------------end of line chart------------
+            //---TRANSACTION MODE WISE SIP-------
+            var data = google.visualization.arrayToDataTable(SIParray);
+            var options = {
+                //title: 'TRANSACTION MODE WISE SIP',
+                //colors: ['#5a1249', '#0a7148', '#f26b3e', '#81133b', '#0a6c70', '#00FFFF', '#66CDAA', '#5F9EA0', '#A9A9A9', '#BDB76B', '#2F4F4F', '#E9967A', '#F0E68C', '#F08080', '#6B8E23', '#708090'],
+                backgroundColor: 'transparent',
+                enableInteractivity: true,
+                is3D: true,
+                legend: { position: 'bottom', alignment: 'start' }
+            };
+            var chart = new google.visualization.PieChart(document.getElementById('SIPPIECHART'));
+            chart.draw(data, options);
+            //---end ofTRANSACTION MODE WISE SIP-------
+            //---TRANSACTION MODE WISE NONSIP-------
+            var datanonsip = google.visualization.arrayToDataTable(NONSIParray);
+            var optionsnonsip = {
+                //title: 'TRANSACTION MODE WISE NONSIP',
+                //  colors: ['#5a1249', '#0a7148', '#f26b3e', '#81133b', '#0a6c70', '#00FFFF', '#66CDAA', '#5F9EA0', '#A9A9A9', '#BDB76B', '#2F4F4F', '#E9967A', '#F0E68C', '#F08080', '#6B8E23', '#708090'],
+                backgroundColor: 'transparent',
+                enableInteractivity: true,
+                is3D: true,
+                legend: { position: 'bottom', alignment: 'start' }
+            };
+            var chartnonsip = new google.visualization.PieChart(document.getElementById('NONSIPPIECHART'));
+            chartnonsip.draw(datanonsip, optionsnonsip);
+            //---end ofTRANSACTION MODE WISE NONSIP-------
+
+
+        });
+
+
+    }
+    function commaSeparateNumber(val) {
+        var newvalue = val.replace(/(\d)(?=(\d\d\d)+(?!\d))/g, "$1,")
+        return newvalue;
+    }
+
+
+
+    function clearalldata() {
+        $('#currentFundName').html('');
+        $('#datechange').html('');
+        $('#currentFundName').html('');
+        $('#divupto1weekcount').html('');
+        $('#divupto1weekamount').html('');
+
+        $('#div1to2weekcount').html('');
+        $('#div1to2weekamount').html('');
+
+        $('#div2to3weekscount').html('');
+        $('#div2to3weeksamount').html('');
+
+        $('#divAbove3weekscount').html('');
+        $('#divAbove3weeksamount').html('');
+
+        $('#divGrandTotalcount').html('');
+        $('#divGrandTotalamount').html('');
+
+        //-----------END OF SIP DATA----
+        //-----------NON SIP DATA ----------
+
+        $('#NONdivupto1weekcount').html('');
+        $('#NONdivupto1weekamount').html('');
+
+        $('#NONdiv1to2weekcount').html('');
+        $('#NONdiv1to2weekamount').html('');
+
+        $('#NONdiv2to3weekscount').html('');
+        $('#NONdiv2to3weeksamount').html('');
+
+        $('#NONdivAbove3weekscount').html('');
+        $('#NONdivAbove3weeksamount').html('');
+
+        $('#NONdivGrandTotalcount').html('');
+        $('#NONdivGrandTotalamount').html('');
+        // ------------
+        $('#datechange').html('');
+        $('#datechange1').html('');
+        $('#datechange2').html('');
+        $('#datechange3').html('');
+        $('#datechange4').html('');
+        $('#2to3weeksip1').html('');
+        $('#above3weeksmsg1').html('');
+        $('#upto1weeksipdivmsg').html('');
+        $('#1to2weekssipdivmsg').html('');
+        $('#sipgrandtotaldivmsg').html('');
+        $('#upto1weeknonsipdivmsg').html('');
+        $('#1to2weeksnonsipdivmsg').html('');
+        $('#nonsipgrandtotaldivmsg').html('');
+
+    }
+</script>
+
+<html>
+<body onload="javascript: getdoctype()">
+    @using (Html.BeginForm("BankingDashboard", "Kloc", FormMethod.Post))
+    {
+        <div id="loader"></div>
+
+        <div class="main-container">
+            <div class="inner-container">
+                <div class="row margin0 padding0">
+                    <div class="credit bdtop">
+                        <strong>Creditpendingtill:</strong><input type="text" class="txtfromdateclass" id="txtfromdate" />
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+        <input type="button" id="btnsip" class="submitbtn" value="submit" />
+                        <input type="button" id="btnToday" class="submitbtn bdtop1" value="TodayReport" />
+
+                        <label id="lblErrormsg" style="color: red"></label>
+
+                    </div>
+
+                    <div id="maindiv">
+
+                        <div class="row margin0 padding0">
+                            <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+                                <div class="axismainheading">
+
+                                    <div class="axisheading">
+                                        <h2><span id="currentFundName"></span>&nbsp;BANKING DASHBOARD </h2>
+                                    </div>
+
+
+
+                                    <div class="nctmainheading">
+                                        <h3 style="text-align: left;">Credit pending status as on <span id="datechange"></span>&nbsp;- SIP & Non-SIP</h3>
+                                    </div>
+
+
+                                    @*---SIP HEADING*@
+
+
+                                    <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 margin0 padding0 tab-padding-left5">
+
+                                        <div class="col-lg-2 col-md-2 col-sm-12 col-xs-12 padding-left0 margin-left0 padding-right5">
+
+                                            <div class="mainsipheading  tabmainsipheading" id="divheading">
+                                                <h3>SIP </h3>
+                                            </div>
+
+                                        </div>
+
+                                        <div class="col-lg-2 col-md-2 col-sm-6 col-xs-12 padding-left0 margin-left0 padding-right5">
+
+                                            <div id="upto1weeksipdiv" class="sip1 tabsip">
+                                                <h5 id="divupto1weekheading">Upto 1 Week</h5>
+                                                <label class="left" id="divupto1weekcount"></label>
+                                                <div id="upto1weeksipdivmsg" class="allclear"></div>
+                                                <label class="text-alignright" id="divupto1weekamount"></label>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-lg-2 col-md-2 col-sm-6 col-xs-12 padding-left0 margin-left0 padding-right5">
+
+                                            <div id="1to2weekssipdiv" class="sip1 tabsip1">
+                                                <h5 id="div1to2weekheading">1 to 2 Weeks</h5>
+                                                <label class="left" id="div1to2weekcount"></label>
+                                                <div id="1to2weekssipdivmsg" class="allclear"></div>
+                                                <label class="text-alignright" id="div1to2weekamount"></label>
+                                            </div>
+
+                                        </div>
+
+                                        <div class="col-lg-2 col-md-2 col-sm-6 col-xs-12 padding-left0 margin-left0 padding-right4">
+                                            @*  class="sip2to3weeks"*@
+                                            <div id="2to3weeks" class="sip2to3weeks tabsip2to3weeks">
+                                                <h5 id="div2to3weeksheading">2 to 3 Weeks</h5>
+                                                <label class="left" id="div2to3weekscount"></label>
+                                                <div id="2to3weeksip" class="allclear"></div>
+                                                <label class="text-alignright margin0" id="div2to3weeksamount"></label>
+                                            </div>
+
+                                        </div>
+
+                                        <div class="col-lg-2 col-md-2 col-sm-6 col-xs-12 padding-left0 margin-left0 padding-right5">
+
+                                            <div id="above3weeksdiv" class="sip2to3weeks">
+                                                <h5 id="divAbove3weeksheading">Above 3 Weeks</h5>
+                                                <label class="left" id="divAbove3weekscount"></label>
+                                                <div id="above3weeksmsg" class="allclear"></div>
+                                                <label class="text-alignright margin0" id="divAbove3weeksamount"></label>
+                                            </div>
+
+                                        </div>
+
+                                        <div class="col-lg-2 col-md-2 col-sm-6 col-xs-12 padding-left0 margin-left0 padding-right5">
+
+                                            <div id="sipgrandtotaldiv" class="sip3 tabsip2">
+                                                <h5 id="divGrandTotalheading">Grand Total</h5>
+                                                <label class="left" id="divGrandTotalcount"></label>
+                                                <div id="sipgrandtotaldivmsg" class="allclear"></div>
+                                                <label class="text-alignright" id="divGrandTotalamount"></label>
+                                            </div>
+
+                                        </div>
+
+                                    </div>
+
+                                    <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 margin0 padding0 tab-padding-left5">
+
+                                        <div class="col-lg-2 col-md-2 col-sm-12 col-xs-12 padding-left0 margin-left0 padding-right5">
+
+                                            <div class="mainsipheading1  tabmainsipheading" id="NONdivheading">
+                                                <h3>Non-SIP </h3>
+                                            </div>
+
+                                        </div>
+
+                                        <div class="col-lg-2 col-md-2 col-sm-6 col-xs-12 padding-left0 margin-left0 padding-right5">
+
+                                            <div id="upto1weeknonsipdiv" class="sip1 tabsip">
+                                                <h5 id="NONdivupto1weekheading">Upto 1 Week</h5>
+                                                <label class="left" id="NONdivupto1weekcount"></label>
+                                                <div id="upto1weeknonsipdivmsg" class="allclear"></div>
+                                                <label class="text-alignright" id="NONdivupto1weekamount"></label>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-lg-2 col-md-2 col-sm-6 col-xs-12 padding-left0 margin-left0 padding-right5">
+
+                                            <div id="1to2weeksnonsipdiv" class="sip1 tabsip1">
+                                                <h5 id="NONdiv1to2weekheading">1 to 2 Weeks</h5>
+                                                <label class="left" id="NONdiv1to2weekcount"></label>
+                                                <div id="1to2weeksnonsipdivmsg" class="allclear"></div>
+                                                <label class="text-alignright" id="NONdiv1to2weekamount"></label>
+                                            </div>
+
+                                        </div>
+
+                                        <div class="col-lg-2 col-md-2 col-sm-6 col-xs-12 padding-left0 margin-left0 padding-right4">
+                                            @*  class="sip2to3weeks"*@
+                                            <div id="2to3weeks1" class="sip2to3weeks tabsip2to3weeks">
+                                                <h5 id="NONdiv2to3weeksheading">2 to 3 Weeks</h5>
+                                                <label class="left" id="NONdiv2to3weekscount"></label>
+                                                <div id="2to3weeksip1" class="allclear"></div>
+                                                <label class="text-alignright" id="NONdiv2to3weeksamount"></label>
+                                            </div>
+
+                                        </div>
+
+                                        <div class="col-lg-2 col-md-2 col-sm-6 col-xs-12 padding-left0 margin-left0 padding-right5">
+
+                                            <div id="above3weeksdiv1" class="sip2to3weeks">
+                                                <h5 id="NONdivAbove3weeksheading">Above 3 Weeks</h5>
+                                                <label class="left" id="NONdivAbove3weekscount"></label>
+                                                <div id="above3weeksmsg1" class="allclear"></div>
+                                                <label class="text-alignright" id="NONdivAbove3weeksamount"></label>
+                                            </div>
+
+                                        </div>
+
+                                        <div class="col-lg-2 col-md-2 col-sm-6 col-xs-12 padding-left0 margin-left0 padding-right5">
+
+                                            <div id="nonsipgrandtotaldiv" class="sip3 tabsip2">
+                                                <h5 id="NONdivGrandTotalheading">Grand Total</h5>
+                                                <label class="left" id="NONdivGrandTotalcount"></label>
+                                                <div id="nonsipgrandtotaldivmsg" class="allclear"></div>
+                                                <label class="text-alignright" id="NONdivGrandTotalamount"></label>
+                                            </div>
+
+                                        </div>
+
+                                    </div>
+
+                                </div>
+                            </div>
+                            @***********IF ALL DATA CLERED HIDE THESE ALL BELOW DIVS***@
+                            <div id="allcleareddiv">
+                                @************* LINE CHART ************T*@
+                                <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+
+                                    <div class="bankdashboardcharts">
+                                        <div class="sipheading">
+                                            <h3>SIP VS NON-SIP GrandTotal</h3>
+                                        </div>
+
+                                        <div id="LINECHART" style="height: 300px;"></div>
+                                    </div>
+                                </div>
+
+
+
+                                @************* SIPPIE CHART ************T*@
+                                <div class="col-lg-6 col-md-6 col-sm-12 col-xs-12">
+                                    <div class="bankdashboardcharts">
+                                        <div class="sipheading">
+                                            <h3>TRANSACTION MODE WISE SIP</h3>
+                                        </div>
+                                        <div id="SIPPIECHART" style="height: 300px;"></div>
+                                    </div>
+                                </div>
+
+
+
+                                @************* NONSIP PIE CHART *************@
+
+                                <div class="col-lg-6 col-md-6 col-sm-12 col-xs-12">
+                                    <div class="bankdashboardcharts">
+                                        <div class="sipheading">
+                                            <h3>TRANSACTION MODE WISE NONSIP</h3>
+                                        </div>
+                                        <div id="NONSIPPIECHART" style="height: 300px;"></div>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+                                    <div class="bankdashboardtables">
+                                        <div class="sipheading">
+                                            <h3>Credit pending status as on <span id="datechange1"></span>&nbsp;&nbsp;SIP & Non-SIP</h3>
+                                        </div>
+                                        <div id="tabledata"></div>
+                                    </div>
+                                </div>
+
+
+                                <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+                                    <div class="bankdashboardtables">
+                                        <div class="sipheading">
+                                            <h3>Credit pending status as on <span id="datechange2"></span>&nbsp;&nbsp;- SIP Transaction Mode Wise</h3>
+                                        </div>
+
+                                        <div id="tabledatasipmode"></div>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+                                    <div class="bankdashboardtables">
+                                        <div class="sipheading">
+                                            <h3>Credit pending status as on <span id="datechange3"></span>&nbsp;&nbsp;- NON-SIP Transaction Mode Wise</h3>
+                                        </div>
+                                        <div id="tabledatanonsipmode"></div>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+                                    <div class="bankdashboardtables">
+                                        <div class="sipheading">
+                                            <h3>Transaction Mode Wise SIP&NON-SIP GrandTotal</h3>
+                                        </div>
+                                        <div id="sipnonsipgrandtotal"></div>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+                                    <div class="bankdashboardtables">
+                                        <div class="sipheading">
+                                            <h3>Credit pending status as on <span id="datechange4"></span>&nbsp;&nbsp;- Scheme Wise</h3>
+                                        </div>
+                                        <div id="tabledatascheme" style="width: auto; height: 500px;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</body>
+</html>

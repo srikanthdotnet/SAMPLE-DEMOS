@@ -1,0 +1,301 @@
+﻿@model KlocModel.NexPurchase
+
+@{
+    ViewBag.Title = "FundingandPayoutDashboard";
+    Layout = "~/Views/Shared/_KlocDashboard.cshtml";
+}
+
+<script src="~/Scripts/loader.js"></script>
+<link type="text/css" rel="stylesheet" href="@Url.Content("~/Content/Kloc/loaderstyles.css")"/>
+<style type="text/css">
+    .loader {
+        overflow: visible;
+        margin: auto;
+        content: '';
+        display: block;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: url(../Images/ajax-loader1.gif) 50% 50% no-repeat rgba(0,0,0,0.3);
+        z-index: 9;
+    }
+
+    .fund-dd .input_field {
+        margin-top: 5px;
+    }
+
+    .pointer {
+        cursor: pointer;
+    }
+</style>
+<script type="text/javascript">
+    $(document).ready(function () {
+        debugger;
+        $('#fundingtabledata').html('');
+        $("#txtfromdate").datepicker({
+            dateFormat: 'dd/mm/yy',
+        });
+        $("#txttodate").datepicker({
+            dateFormat: 'dd/mm/yy',
+            maxDate: 0
+        });
+        var currentfund = $('#ddlFund').val();
+        var c = sessionStorage.DdlFund;
+        if (currentfund == "") {
+            alert('Please select fund to view the report');
+            return;
+        }
+        else {
+            getexchangeDashbaord();
+        }
+
+        function Datecalculation() {
+            var today = new Date();
+            var dd = today.getDate();
+            var mm = today.getMonth() + 1; //January is 0!
+
+            var yyyy = today.getFullYear();
+            if (dd < 10) {
+                dd = '0' + dd;
+            }
+            if (mm < 10) {
+                mm = '0' + mm;
+            }
+            var Todate = dd + '/' + mm + '/' + yyyy;
+            var datediffernce = new Date();
+            datediffernce.setDate(datediffernce.getDate() - 30);
+            var ddd = datediffernce.getDate();
+            var mmm = datediffernce.getMonth() + 1;
+            var yyy = datediffernce.getFullYear();
+            var Fromdate = ddd + '/' + mmm + '/' + yyy;
+            $("#txttodate").val(Todate);
+            $("#txtfromdate").val(Fromdate);
+        }
+
+        function getexchangeDashbaord() {
+            debugger;
+            $('#loader').show().addClass("loader");
+            var currentfund = $('#ddlFund').val();
+            var today = new Date();
+            var dd = today.getDate();
+            var mm = today.getMonth() + 1; //January is 0!
+
+            var yyyy = today.getFullYear();
+            if (dd < 10) {
+                dd = '0' + dd;
+            }
+            if (mm < 10) {
+                mm = '0' + mm;
+            }
+            var Todate = dd + '/' + mm + '/' + yyyy;
+            var Fromdate = '01' + '/' + mm + '/' + yyyy;
+            var datediffernce = new Date();
+            datediffernce.setDate(datediffernce.getDate() - 30);
+            var ddd = datediffernce.getDate();
+            var mmm = datediffernce.getMonth() + 1;
+            var yyy = datediffernce.getFullYear();
+            $("#txttodate").val(Todate);
+            $("#txtfromdate").val(Fromdate);
+            $('#fromdatechange').html(Fromdate);
+            $('#Todatechange').html(Todate);
+            $.ajax({
+                url: "/Kloc/FundingandPayoutDashboard",
+                type: "post",
+                cache: false,
+                datatype: JSON,
+                data: { Fromdate: Fromdate, Todate: Todate, Fund: currentfund },
+                success: function (data) {
+                    debugger;
+                    var c = data;
+                    $('#loader').hide();
+                    var exchange = $.parseJSON(data).Table1;
+                    $('#currentFundName').html($('#ddlFund option:selected').text());
+                    //---table0----
+                    $('#tabledata').html("");
+
+                    var rows = exchange;
+                    if (exchange.length > 0) {
+                        var currentlength = exchange.length - 1;
+                        var i = 0;
+                        var st = '';
+                        st += '<table class="bankingdata">';
+                        st += '<tbody>';
+                        st += '<th>Mode</th>';
+                        st += '<th>Reported</th>';
+                        st += '<th>Processed</th>';
+                        st += '<th>Rejected</th>';
+                        st += '<th>Pending</th>';
+                        st += '<th>Funded</th>';
+                        st += '<th>FundedPending</th>';
+
+
+                        for (i ; i <= currentlength; i++) {
+                            st += '<tr>';
+                            st += '<td class="nd text-alignleft">' + rows[i].Mode + '</td>';
+                            st += '<td class="nd">' + rows[i].Reported + '</td>';
+                            st += '<td class="nd">' + rows[i].Processed + '</td>';
+                            st += '<td class="nd">' + rows[i].Rejected + '</td>';
+                            st += '<td class="nd">' + rows[i].Pending + '</td>';
+                            st += '<td class="nd">' + rows[i].Funded + '</td>';
+                            st += '<td class="nd">' + rows[i].FundedPending + '</td>';
+                            st += '</tr>';
+                        }
+                        st += '</tbody>';
+                        st += '</table>';
+                        $('#fundingtabledata').append(st);
+
+                    }
+
+                }
+            });
+
+        }
+        function PostexchangeDashbaord() {
+            debugger;
+            $('#loader').show().addClass("loader");
+            var currentfund = $('#ddlFund').val();
+            var Fromdate = $("#txtfromdate").val();
+            var Todate = $("#txttodate").val();
+            $('#fromdatechange').html(Fromdate);
+            $('#Todatechange').html(Todate);
+            $.ajax({
+                url: "/Kloc/FundingandPayoutDashboard",
+                type: "post",
+                cache: false,
+                datatype: JSON,
+                data: { Fromdate: Fromdate, Todate: Todate, Fund: currentfund },
+                success: function (data) {
+                    debugger;
+                    var c = data;
+                    $('#loader').hide();
+                    var exchange = $.parseJSON(data).Table1;
+                    $('#currentFundName').html($('#ddlFund option:selected').text());
+                    //---table0----
+                    $('#tabledata').html("");
+
+                    var rows = exchange;
+                    if (exchange.length > 0) {
+                        var currentlength = exchange.length - 1;
+                        var i = 0;
+                        var st = '';
+                        st += '<table class="bankingdata">';
+                        st += '<tbody>';
+                        st += '<th>Mode</th>';
+                        st += '<th>Reported</th>';
+                        st += '<th>Processed</th>';
+                        st += '<th>Rejected</th>';
+                        st += '<th>Pending</th>';
+                        st += '<th>Funded</th>';
+                        st += '<th>FundedPending</th>';
+
+
+                        for (i ; i <= currentlength; i++) {
+                            st += '<tr>';
+                            st += '<td class="nd text-alignleft">' + rows[i].Mode + '</td>';
+                            st += '<td class="nd">' + rows[i].Reported + '</td>';
+                            st += '<td class="nd">' + rows[i].Processed + '</td>';
+                            st += '<td class="nd">' + rows[i].Rejected + '</td>';
+                            st += '<td class="nd">' + rows[i].Pending + '</td>';
+                            st += '<td class="nd">' + rows[i].Funded + '</td>';
+                            st += '<td class="nd">' + rows[i].FundedPending + '</td>';
+                            st += '</tr>';
+                        }
+                        st += '</tbody>';
+                        st += '</table>';
+                        $('#fundingtabledata').append(st);
+
+                    }
+
+                }
+            });
+
+        }
+        $('#btnsip').click(function () {
+           $('#fundingtabledata').html('');
+            PostexchangeDashbaord();
+        });
+        $('#btnExcelReport').click(function () {
+            debugger;
+            var currentfund = $('#ddlFund').val();
+            var Fromdate = $("#txtfromdate").val();
+            var Todate = $("#txttodate").val();
+            alert("Please wait it will take some time to download the excel file");
+            var FileName = "FundingandPayoutDashboard";
+            window.location = "/Kloc/FundingandPayoutExportExcel?Fromdate=" + Fromdate + "&Todate=" + Todate + "&Fund=" + currentfund ;
+        });
+
+    });
+</script>
+
+<html>
+<body>
+    @using (Html.BeginForm("FundingandPayoutDashboard", "Kloc", FormMethod.Post))
+    {
+        <div id="loader"></div>
+
+        <div class="main-container">
+
+            <div class="inner-container">
+
+                <div class="row margin0 padding0">
+
+                    <div id="">
+                        <div class="credit">
+                            <span class="left mobdate mobmargin-top10"><span class="margin-top5"><strong>From Date:</strong></span><input type="text" id="txtfromdate" class="right mobdatpicker" /></span>
+                            <span class="left mobdate mobmargin-top17"><strong>To Date:</strong><input type="text" id="txttodate" class="right mobdatpicker1 " /></span>
+                            <div class="mobcenter">
+                                <input type="button" id="btnsip" class="submitbtn" value="submit" />&nbsp;&nbsp;
+                                <img id="btnExcelReport" class="pointer" src="~/Images/excel.png" data-toggle="tooltip" title="ExportExcel" />
+                            </div>
+
+                            <label id="lblErrormsg" style="color: red"></label>
+                        </div>
+
+                        <div id="maindiv">
+                            <div class="row margin0 padding0">
+                                <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+                                    <div class="axismainheading">
+
+                                        <div class="axisheading">
+                                            <h2><span id="currentFundName"></span>&nbsp;Funding&Payout Dashboard  </h2>
+                                        </div>
+                                        <div class="nctmainheading">
+                                            <h3 style="text-align: left;">The report is for the period <span id="fromdatechange"></span>&nbsp;to <span id="Todatechange"></span></h3>
+                                        </div>
+
+                                        <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 margin0 padding0">
+
+
+
+                                            <div class="clear"></div>
+
+                                            <div>
+                                                <div class="nctdashboard fundingdashboard">
+                                                    @*  <div class="nctheading">
+                                                        <h3 id="tbl1heading"></h3>
+                                                    </div>*@
+                                                    <div id="fundingtabledata"></div>
+                                                </div>
+                                            </div>
+                                            <div class="clear"></div>
+                                            <div class="clear"></div>
+
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+
+    }
+</body>
+</html>

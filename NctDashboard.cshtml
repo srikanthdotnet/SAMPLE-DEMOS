@@ -1,0 +1,707 @@
+﻿@model KlocModel.NexPurchase
+
+@{
+    ViewBag.Title = "NctDashboard";
+    Layout = "~/Views/Shared/_KlocDashboard.cshtml";
+}
+
+<script src="~/Scripts/loader.js"></script>
+<link type="text/css" rel="stylesheet" href="@Url.Content("~/Content/Kloc/loaderstyles.css")"/>
+<style type="text/css">
+    .loader {
+        overflow: visible;
+        margin: auto;
+        content: '';
+        display: block;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: url(../Images/ajax-loader1.gif) 50% 50% no-repeat rgba(0,0,0,0.3);
+        z-index: 9;
+    }
+
+    .fund-dd .input_field {
+        margin-top: 5px;
+    }
+
+    table tr:nth-of-type(2n+2) td {
+        background: #fff;
+    }
+
+    .pointer {
+        cursor: pointer;
+    }
+</style>
+<script type="text/javascript">
+    $(document).ready(function () {
+
+        clearalldata();
+        $("#txtfromdate").datepicker({
+            dateFormat: 'dd/mm/yy',
+        });
+        $("#txttodate").datepicker({
+            dateFormat: 'dd/mm/yy',
+            maxDate: 0
+        });
+        $('#btnnctdashboardReport').click(function () {
+            debugger;
+            $('#loader').show().addClass("loader");
+            var currentfund = $('#ddlFund').val();
+            var Flag = "2";
+            var conditionflag = "2";
+            var Fromdate = $("#txtfromdate").val();
+            var Todate = $("#txttodate").val();
+            $.ajax({
+                url: "/Kloc/GetallNctDashboarddata",
+                type: "get",
+                cache: false,
+                datatype: JSON,
+                data: { Fromdate: Fromdate, Todate: Todate, Fund: currentfund, flg: Flag, conditionflag: conditionflag },
+                success: function (response) {
+                    var a = response;
+                    debugger;
+                    $('#loader').hide();
+                    window.location.href = "../AccountStmts/" + response.Path;
+                },
+                failure: function (response) {
+
+                }
+            });
+
+        });
+        $('#btnExcelReport').click(function () {
+            debugger;
+            var currentfund = $('#ddlFund').val();
+            var Todate = $('#txttodate').val();
+            var Fromdate = $("#txtfromdate").val();
+            var Todate = $("#txttodate").val();
+            var Flag = "1";
+            var FileName = "NCTData";
+            alert("Please wait it will take some time to download the excel file");
+            window.location = "/Kloc/NctExportExcel?Fund=" + currentfund + "&flg=" + Flag + "&FileName=" + FileName + "&Todate=" + Todate + "&Fromdate=" + Fromdate;
+        });
+        var currentfund = $('#ddlFund').val();
+        var c = sessionStorage.DdlFund;
+        if (currentfund == "") {
+
+            alert('Please select fund to view the report');
+            return;
+        }
+        else {
+            //$('#alldata').hide();
+
+            getdoctype();
+        }
+
+        //---------------------------
+
+        function Datecalculation() {
+            var today = new Date();
+            var dd = today.getDate();
+            var mm = today.getMonth() + 1; //January is 0!
+
+            var yyyy = today.getFullYear();
+            if (dd < 10) {
+                dd = '0' + dd;
+            }
+            if (mm < 10) {
+                mm = '0' + mm;
+            }
+            var Todate = dd + '/' + mm + '/' + yyyy;
+            var datediffernce = new Date();
+            datediffernce.setDate(datediffernce.getDate() - 30);
+            var ddd = datediffernce.getDate();
+            var mmm = datediffernce.getMonth() + 1;
+            var yyy = datediffernce.getFullYear();
+            var Fromdate = ddd + '/' + mmm + '/' + yyy;
+            $("#txttodate").val(Todate);
+            $("#txtfromdate").val(Fromdate);
+            //if (mmm < mm) {
+
+            //    alert('Todate not graterthan fromdate');
+            //    return;
+
+            //}
+        }
+
+
+
+        $('#btnsip').click(function () {
+            Postdoctype();
+        });
+        function getdoctype() {
+            clearalldata();
+            $('#loader').show().addClass("loader");
+            var currentfund = $('#ddlFund').val();
+            var today = new Date();
+            var dd = today.getDate();
+            var mm = today.getMonth() + 1; //January is 0!
+
+            var yyyy = today.getFullYear();
+            if (dd < 10) {
+                dd = '0' + dd;
+            }
+            if (mm < 10) {
+                mm = '0' + mm;
+            }
+            var Todate = dd + '/' + mm + '/' + yyyy;
+            var Fromdate = '01' + '/' + mm + '/' + yyyy;
+            var datediffernce = new Date();
+            datediffernce.setDate(datediffernce.getDate() - 30);
+            var ddd = datediffernce.getDate();
+            var mmm = datediffernce.getMonth() + 1;
+            var yyy = datediffernce.getFullYear();
+            //var Fromdate = ddd + '/' + mmm + '/' + yyy;
+
+            $('#maindiv').hide();
+            $("#txttodate").val(Todate);
+            $("#txtfromdate").val(Fromdate);
+            $('#fromdatechange').html(Fromdate);
+            $('#Todatechange').html(Todate);
+            var Flag = "2";
+            var conditionflag = "1";
+            //if (mmm < mm) {
+
+            //    alert('Todate not graterthan fromdate');
+            //    return;
+
+            //}
+            $.ajax({
+                url: "/Kloc/GetallNctDashboarddata",
+                type: "get",
+                cache: false,
+                datatype: JSON,
+                data: { Fromdate: Fromdate, Todate: Todate, Fund: currentfund, flg: Flag, conditionflag: conditionflag },
+                success: function (data) {
+                    debugger;
+                    var Table0 = $.parseJSON(data).Table;
+                    var Table1 = $.parseJSON(data).Table1;
+                    var Table2 = $.parseJSON(data).Table2;
+                    var Table3 = $.parseJSON(data).Table3;
+
+                    var Table4 = $.parseJSON(data).Table4;
+                    $('#loader').hide();
+                    $('#maindiv').show();
+                    ////----------table data------
+                    @*$('#currentFundName').html('@Session["currentFundName"]');*@
+                    $('#currentFundName').html($('#ddlFund option:selected').text());
+                    //---table0----
+                    $('#tabledata').html("");
+                    $('#tbl1heading').html("NCT Reported vs.Pending")
+                    var rows = Table0;
+                    if (rows != null && rows != "") {
+                        var rowcnt = rows.length - 1;
+                        var i = 0;
+                        var st = '';
+                        st += '<table class="bankingdata">';
+                        st += '<tbody>';
+                        st += '<th>Category</th>';
+                        st += '<th>Total Reported</th>';
+                        st += '<th>Total Processed</th>';
+                        st += '<th>Total Pending</th>';
+                        for (i ; i <= rowcnt; i++) {
+
+                            //if (rows[i].fund_code != null && rows[i].fund_code != "") {
+                            st += '<tr>';
+                            st += '<td class="nd text-alignleft">' + rows[i].Category + '</td>';
+                            st += '<td class="nd">' + rows[i].TotalReported + '</td>';
+                            st += '<td class="nd">' + rows[i].TotalProcessed + '</td>';
+                            st += '<td class="nd">' + rows[i].TotalPending + '</td>';
+                            st += '</tr>';
+                        }
+                        st += '</tbody>';
+                        st += '</table>';
+                        $('#tabledata').append(st);
+
+
+                    }
+                    $('#tabledataQRC').html("");
+
+                    var rows1 = Table1;
+                    if (rows1 != null && rows1 != "") {
+                        var rowcnt = rows1.length - 1;
+                        var i = 0;
+                        var st = '';
+                        st += '<table class="bankingdata">';
+                        st += '<tbody>';
+                        st += '<th>Query</th>';
+                        st += '<th>Request</th>';
+                        st += '<th>Complaint</th>';
+
+                        for (i ; i <= rowcnt; i++) {
+                            st += '<tr>';
+                            st += '<td class="nd text-alignleft">' + rows1[i].Query + '</td>';
+                            st += '<td class="nd">' + rows1[i].Request + '</td>';
+                            st += '<td class="nd">' + rows1[i].Complaint + '</td>';
+                            st += '</tr>';
+
+                        }
+                        st += '</tbody>';
+                        st += '</table>';
+                        $('#tabledataQRC').append(st);
+                    }
+
+                    $('#tabledata2').html("");
+                    $('#tbl2heading').html("TAT Adherence")
+                    var rows10 = Table2;
+                    if (rows10 != null && rows10 != "") {
+                        var rowcnt = rows10.length - 1;
+                        var i = 0;
+                        var c = 1;
+                        var st = '';
+                        st += '<table class="bankingdata">';
+                        st += '<tbody>';
+                        st += '<th>TAT Category</th>';
+                        st += '<th>Total Pending</th>';
+                        st += '<th>Within TAT</th>';
+                        st += '<th>Beyond TAT</th>';
+                        for (i ; i <= rowcnt; i++) {
+
+                            st += '<tr>';
+                            st += '<td class="nd2 text-alignleft">' + rows10[i].TATCategory + '</td>';
+                            st += '<td class="nd2">' + rows10[i].TotalPending + '</td>';
+                            st += '<td class="nd2">' + rows10[i].WithinTAT + '</td>';
+                            st += '<td class="nd2">' + rows10[i].BeyondTAT + '</td>';
+                            st += '</tr>';
+                        }
+                        st += '</tbody>';
+                        st += '</table>';
+                        $('#tabledata2').append(st);
+
+                    }
+                    $('#tabledatazone').html("");
+                    var rows3 = Table3;
+                    debugger;
+                    if (rows3.length != "0") {
+                        if (rows3 != null && rows3 != "") {
+                            var rowcnt1 = rows3.length - 1;
+                            var i = 0;
+                            var c = 1;
+                            var st = '';
+                            st += '<table class="bankingdata">';
+                            st += '<tbody>';
+                            st += '<th>Zone</th>';
+                            st += '<th>Within</th>';
+                            st += '<th>Beyond</th>';
+                            for (i ; i <= rowcnt1; i++) {
+
+                                st += '<tr>';
+                                st += '<td class="nd2 text-alignleft">' + rows3[i].Zone + '</td>';
+                                st += '<td class="nd2">' + rows3[i].Within + '</td>';
+                                st += '<td class="nd2">' + rows3[i].Beyond + '</td>';
+
+                                st += '</tr>';
+                            }
+                            st += '</tbody>';
+                            st += '</table>';
+                            $('#tabledatazone').append(st);
+                        }
+                    }
+                    else {
+                        $('#Zonedivcontent').html('No Data available');
+                        $('#Zonedivcontent').addClass('nodatafound');
+
+                    }
+
+                    $('#tabledata1').html("");
+
+                    var rows4 = Table4;
+                    debugger;
+                    if (rows4.length != "0") {
+                        if (rows4 != null && rows4 != "") {
+                            var rowcnt = rows4.length - 1;
+                            var i = 0;
+                            var c = 1;
+                            var st = '';
+                            st += '<table class="bankingdata">';
+                            st += '<tbody>';
+                            st += '<th>Slno</th>';
+                            st += '<th>Pending Subjects</th>';
+                            st += '<th>Count</th>';
+                            for (i ; i <= rowcnt; i++) {
+
+                                st += '<tr>';
+                                st += '<td class="nd1 text-alignleft">' + c + '</td>';
+                                st += '<td class="nd1 text-alignleft">' + rows4[i].TOP10NCTPendingSubjects.toUpperCase() + '</td>';
+                                st += '<td class="nd1">' + rows4[i].Count + '</td>';
+                                st += '</tr>';
+                                c = c + 1;
+                            }
+                            st += '</tbody>';
+                            st += '</table>';
+                            $('#tabledata1').append(st);
+                        }
+                    }
+                    else {
+                        $('#top10divcontent').html('No Data available');
+                        $('#top10divcontent').addClass('nodatafound');
+                    }
+                }
+            })
+        }
+        function Postdoctype() {
+            clearalldata();
+            $('#maindiv').hide();
+            debugger;
+            var currentfund = $('#ddlFund').val();
+            var Fromdate = $("#txtfromdate").val();
+            var Todate = $("#txttodate").val();
+            var currentfund = $('#ddlFund').val();
+            var Flag = "2";
+            var conditionflag = "1";
+            $('#fromdatechange').html(Fromdate);
+            $('#Todatechange').html(Todate);
+
+            var fromdatesplitmonth = Fromdate.split('/')[1];
+            var TodatesplitMonth = Todate.split('/')[1];
+            if (TodatesplitMonth < fromdatesplitmonth) {
+                alert('Todate not less than fromdate');
+
+                return;
+            }
+            $('#maindiv').hide();
+            $('#loader').show().addClass("loader");
+            $.ajax({
+                url: "/Kloc/GetallNctDashboarddata",
+                type: "get",
+                cache: false,
+                datatype: JSON,
+                data: { Fromdate: Fromdate, Todate: Todate, Fund: currentfund, flg: Flag, conditionflag: conditionflag },
+                success: function (data) {
+                    var errortabledata1 = $.parseJSON(data).ErrorTable
+                    if (errortabledata1 != null && errortabledata1 != "") {
+                        var errortabledatalength = errortabledata1.length;
+                        if (errortabledatalength > 0) {
+                            $('#maindiv').hide();
+                            $('#loader').hide();
+                            alert(errortabledata1[0].Error_Message);
+                            return;
+                        }
+                    }
+
+                    debugger;
+                    var Table0 = $.parseJSON(data).Table;
+                    var Table1 = $.parseJSON(data).Table1;
+                    var Table2 = $.parseJSON(data).Table2;
+                    var Table3 = $.parseJSON(data).Table3;
+                    var Table4 = $.parseJSON(data).Table4;
+                    $('#loader').hide();
+                    $('#maindiv').show();
+                    ////----------table data------
+                    $('#currentFundName').html($('#ddlFund option:selected').text());
+                    //---table0----
+                    $('#tabledata').html("");
+                    $('#tbl1heading').html("NCT Reported vs.Pending")
+                    var rows = Table0;
+                    if (rows != null && rows != "") {
+                        var rowcnt = rows.length - 1;
+                        var i = 0;
+                        var st = '';
+                        st += '<table class="bankingdata">';
+                        st += '<tbody>';
+                        st += '<th>Category</th>';
+                        st += '<th>Total Reported</th>';
+                        st += '<th>Total Processed</th>';
+                        st += '<th>Total Pending</th>';
+                        for (i ; i <= rowcnt; i++) {
+
+                            //if (rows[i].fund_code != null && rows[i].fund_code != "") {
+                            st += '<tr>';
+                            st += '<td class="nd text-alignleft">' + rows[i].Category + '</td>';
+                            st += '<td class="nd">' + rows[i].TotalReported + '</td>';
+
+                            st += '<td class="nd">' + rows[i].TotalProcessed + '</td>';
+                            st += '<td class="nd">' + rows[i].TotalPending + '</td>';
+                            st += '</tr>';
+
+                        }
+                        st += '</tbody>';
+                        st += '</table>';
+                        $('#tabledata').append(st);
+
+
+                    }
+                    ////------------------------------
+                    //------------table1
+                    $('#tabledataQRC').html("");
+
+                    var rows1 = Table1;
+                    if (rows1 != null && rows1 != "") {
+                        var rowcnt = rows1.length - 1;
+                        var i = 0;
+                        var st = '';
+                        st += '<table class="bankingdata">';
+                        st += '<tbody>';
+                        st += '<th>Query</th>';
+                        st += '<th>Request</th>';
+                        st += '<th>Complaint</th>';
+
+                        for (i ; i <= rowcnt; i++) {
+
+                            //if (rows[i].fund_code != null && rows[i].fund_code != "") {
+                            st += '<tr>';
+                            st += '<td class="nd text-alignleft">' + rows1[i].Query + '</td>';
+                            st += '<td class="nd">' + rows1[i].Request + '</td>';
+                            st += '<td class="nd">' + rows1[i].Complaint + '</td>';
+                            st += '</tr>';
+
+                        }
+                        st += '</tbody>';
+                        st += '</table>';
+                        $('#tabledataQRC').append(st);
+                    }
+                    ////----------table data1------
+                    ////----------table data2------
+
+                    $('#tabledata2').html("");
+                    $('#tbl2heading').html("TAT Adherence")
+                    var rows10 = Table2;
+                    if (rows10 != null && rows10 != "") {
+                        var rowcnt = rows10.length - 1;
+                        var i = 0;
+                        var c = 1;
+                        var st = '';
+                        st += '<table class="bankingdata">';
+                        st += '<tbody>';
+                        st += '<th>TAT Category</th>';
+                        st += '<th>Total Pending</th>';
+                        st += '<th>Within TAT</th>';
+                        st += '<th>Beyond TAT</th>';
+                        for (i ; i <= rowcnt; i++) {
+
+                            st += '<tr>';
+                            st += '<td class="nd2">' + rows10[i].TATCategory + '</td>';
+                            st += '<td class="nd2">' + rows10[i].TotalPending + '</td>';
+                            st += '<td class="nd2">' + rows10[i].WithinTAT + '</td>';
+                            st += '<td class="nd2">' + rows10[i].BeyondTAT + '</td>';
+                            st += '</tr>';
+                        }
+                        st += '</tbody>';
+                        st += '</table>';
+                        $('#tabledata2').append(st);
+
+                    }
+                    ////------------------------------
+
+
+
+                    ////----------table data3------
+
+                    $('#tabledatazone').html("");
+
+                    var rows3 = Table3;
+                    if (rows3.length != "0") {
+                        if (rows3 != null && rows3 != "") {
+                            var rowcnt1 = rows3.length - 1;
+
+                            var i = 0;
+                            var c = 1;
+                            var st = '';
+                            st += '<table class="bankingdata">';
+                            st += '<tbody>';
+
+                            st += '<th>Zone</th>';
+                            st += '<th>Within</th>';
+                            st += '<th>Beyond</th>';
+                            for (i ; i <= rowcnt1; i++) {
+
+                                st += '<tr>';
+                                st += '<td class="nd2">' + rows3[i].Zone + '</td>';
+                                st += '<td class="nd2">' + rows3[i].Within + '</td>';
+                                st += '<td class="nd2">' + rows3[i].Beyond + '</td>';
+
+                                st += '</tr>';
+                            }
+                            st += '</tbody>';
+                            st += '</table>';
+                            $('#tabledatazone').append(st);
+                        }
+
+                    }
+                    else {
+                        $('#Zonedivcontent').html('No Data available');
+                        $('#Zonedivcontent').addClass('nodatafound');
+
+                    }
+                    ////------------------------------
+                    $('#tabledata1').html("");
+
+                    var rows4 = Table4;
+                    debugger;
+                    if (rows4.length != "0") {
+                        if (rows4 != null && rows4 != "") {
+                            var rowcnt = rows4.length - 1;
+                            var i = 0;
+                            var c = 1;
+                            var st = '';
+                            st += '<table class="bankingdata">';
+                            st += '<tbody>';
+                            st += '<th>Slno</th>';
+                            st += '<th>NCT Pending Subjects</th>';
+                            st += '<th>Count</th>';
+                            for (i ; i <= rowcnt; i++) {
+
+                                st += '<tr>';
+                                st += '<td class="nd1 text-alignleft">' + c + '</td>';
+                                st += '<td class="nd1 text-alignleft">' + rows4[i].TOP10NCTPendingSubjects.toUpperCase() + '</td>';
+                                st += '<td class="nd1">' + rows4[i].Count + '</td>';
+                                st += '</tr>';
+                                c = c + 1;
+                            }
+                            st += '</tbody>';
+                            st += '</table>';
+                            $('#tabledata1').append(st);
+                        }
+                    }
+                    else {
+                        $('#top10divcontent').html('No Data available');
+                        $('#top10divcontent').addClass('nodatafound');
+
+                    }
+                }
+            })
+        }
+
+        function clearalldata() {
+            $('#currentFundName').html('');
+            $('#fromdatechange').html('');
+            $('#Todatechange').html('');
+            $('#Zonedivcontent').html('');
+            $('#top10divcontent').html('');
+            $('#Zonedivcontent').removeClass('nodatafound');
+            $('#top10divcontent').removeClass('nodatafound');
+            $('#tabledata1').html('');
+            $('#tabledatazone').html('');
+            $('#tabledata2').html('');
+            $('#tabledataQRC').html('');
+            $('#tabledata').html('');
+        }
+    });
+</script>
+
+
+<html>
+<body>
+    @using (Html.BeginForm("NctDashboard", "Kloc", FormMethod.Post))
+    {
+        <div id="loader"></div>
+
+        <div class="main-container">
+
+            <div class="inner-container">
+
+                <div class="row margin0 padding0">
+
+                    <div id="">
+                        <div class="credit">
+                            <span class="left mobdate mobmargin-top10"><span class="margin-top5"><strong>From Date:</strong></span><input type="text" id="txtfromdate" class="right mobdatpicker" /></span>
+                            <span class="left mobdate mobmargin-top17"><strong>To Date:</strong><input type="text" id="txttodate" class="right mobdatpicker1 " /></span>
+                            <div class="mobcenter">
+                                <input type="button" id="btnsip" class="submitbtn" value="submit" />&nbsp;&nbsp;
+
+                                <img id="btnExcelReport" class="pointer" src="~/Images/excel.png" data-toggle="tooltip" title="TotalDump" />
+                                <img id="btnnctdashboardReport" class="pointer" src="~/Images/excel.png" data-toggle="tooltip" title="AllDashboards" />
+                            </div>
+                            <label id="lblErrormsg" style="color: red"></label>
+                        </div>
+
+                        <div id="maindiv">
+                            <div class="row margin0 padding0">
+                                <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+                                    <div class="axismainheading">
+                                        <div class="axisheading">
+                                            <h2><span id="currentFundName"></span>&nbsp;NCT DASHBOARD </h2>
+                                        </div>
+                                        <div class="nctmainheading">
+                                            <h3 style="text-align: left;">The report is for the period <span id="fromdatechange"></span>&nbsp;to <span id="Todatechange"></span></h3>
+                                        </div>
+
+                                        <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 margin0 padding0">
+                                            <div class="clear"></div>
+
+                                            <div class="col-lg-6 col-md-6 col-sm-12 col-xs-12 padding-left5 margin-left0 padding-right5">
+                                                <div class="nctdashboard">
+                                                    <div class="nctheading">
+                                                        <h3 id="tbl1heading"></h3>
+                                                    </div>
+                                                    <div id="tabledata"></div>
+                                                </div>
+                                            </div>
+
+                                            <div class="col-lg-6 col-md-6 col-sm-12 col-xs-12 padding-left5 margin-left0 padding-right5 mobmargin-top20">
+                                                <div class="nctdashboard">
+                                                    <div class="nctheading">
+                                                        <h3>QRC bifurcation on pending numbers</h3>
+                                                    </div>
+                                                    <div id="tabledataQRC"></div>
+                                                </div>
+                                            </div>
+
+                                            <div class="clear"></div>
+
+
+
+                                            @* <div class="col-lg-6 col-md-6 col-sm-12 col-xs-12">
+                                            <div id="tabledata8"></div>
+                                        </div>
+
+                                        <div class="clear"></div>*@
+
+                                            <div class="col-lg-6 col-md-6 col-sm-12 col-xs-12 padding-left5 margin-left0 padding-right5 margin-top10">
+                                                <div class="nctdashboardchart">
+
+                                                    <div class="nctheading">
+                                                        <h3 id="tbl2heading"></h3>
+                                                    </div>
+
+                                                    <div id="tabledata2"></div>
+                                                    <div id="tabledata3"></div>
+                                                    <div id="tabledata4"></div>
+                                                </div>
+                                            </div>
+
+
+                                            <div class="col-lg-6 col-md-6 col-sm-12 col-xs-12 padding-left5 margin-left0 padding-right5 margin-top10">
+                                                <div class="nctdashboardchart">
+                                                    <div class="nctheading">
+                                                        <h3>Zone with pendency</h3>
+                                                    </div>
+                                                    <div id="Zonedivcontent"></div>
+                                                    <div id="tabledatazone" style="height: 250px;"></div>
+                                                </div>
+                                            </div>
+                                            <div class="clear"></div>
+
+                                            <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 padding-left5 margin-left0 padding-right5 margin-top10 desk-marbottom20">
+                                                <div class="nctdashboard1">
+                                                    <div class="nctheading">
+                                                        <h3>Top 10 NCT pending Subjects</h3>
+                                                    </div>
+                                                    <div id="top10divcontent"></div>
+                                                    <div id="tabledata1"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+@*
+        <div id="tabledata"></div>
+        <div id="tabledataQRC"></div>
+        <div id="tabledata2"></div>
+        <div id="tabledatazone"></div>
+        <div id="tabledata1"></div>*@
+    }
+</body>
+</html>
